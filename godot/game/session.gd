@@ -199,9 +199,25 @@ func _draw() -> void:
 		for i in range(3):
 			var x: float = entry[0] + i*8
 			draw_colored_polygon(PackedVector2Array([Vector2(x,320),Vector2(x+4,304),Vector2(x+8,320)]), Color("d24e42"))
-	var finish_x: float = level.finish[0]
-	draw_line(Vector2(finish_x+3, 320), Vector2(finish_x+3, 250), ink, 3)
-	draw_colored_polygon(PackedVector2Array([Vector2(finish_x+5,250),Vector2(finish_x+32,260),Vector2(finish_x+5,274)]), Color("287c68"))
+	# Finish marker: a red postbox (Postman's Rush). Drawn from level.finish so it
+	# stays aligned with the goal collision box (data-driven, not hard-coded Y) —
+	# when the finish moves during the level extension, the postbox moves with it.
+	var fr := Rect2(level.finish[0], level.finish[1], level.finish[2], level.finish[3])
+	var post_red := Color("c1392e")
+	var post_dark := Color("8f271f")
+	# domed top (outline, then red)
+	draw_circle(fr.position + Vector2(fr.size.x / 2.0, 8.0), fr.size.x / 2.0, ink)
+	draw_circle(fr.position + Vector2(fr.size.x / 2.0, 8.0), fr.size.x / 2.0 - 1.5, post_red)
+	# body (outline, then red fill)
+	draw_rect(Rect2(fr.position.x - 1.0, fr.position.y + 6.0, fr.size.x + 2.0, fr.size.y - 6.0), ink)
+	draw_rect(Rect2(fr.position.x, fr.position.y + 7.0, fr.size.x, fr.size.y - 7.0), post_red)
+	# mail slot
+	draw_rect(Rect2(fr.position.x + 4.0, fr.position.y + 15.0, fr.size.x - 8.0, 3.0), ink)
+	# gold collection band
+	draw_rect(Rect2(fr.position.x + 2.0, fr.position.y + 34.0, fr.size.x - 4.0, 6.0), Color("f2c94c"))
+	draw_rect(Rect2(fr.position.x + 2.0, fr.position.y + 40.0, fr.size.x - 4.0, 1.0), post_dark)
+	# base
+	draw_rect(Rect2(fr.position.x - 2.0, fr.end.y - 4.0, fr.size.x + 4.0, 4.0), post_dark)
 	draw_string(font, Vector2(33, 251), "01 / GET MOVING", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
 	draw_string(font, Vector2(33, 273), "Read the landing. Then jump.", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ink)
 	draw_string(font, Vector2(474, 227), "02 / MIND THE GAP", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)

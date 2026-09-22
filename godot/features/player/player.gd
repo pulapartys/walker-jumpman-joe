@@ -68,13 +68,41 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	var ink := Color("25354a")
-	var blue := Color("287baf")
+	# Postman ("Postman's Rush"). Original geometric drawing — no imported art.
+	# Collider (18x28) and movement are unchanged; this is a pure repaint.
+	var uniform := Color("2f6db0")   # postal-blue shirt
+	var trouser := Color("22314a")   # navy trousers + cap
+	var ink := Color("1b2a3f")       # outline
+	var skin := Color("e8b98f")      # face
+	var bag_col := Color("a9743f")   # brown mailbag
+	var flap := Color("7d5227")      # bag flap + strap + belt
+	var gold := Color("f2c94c")      # cap badge + buckle
+	var f := facing                  # +1 right, -1 left
 	var stride := sin(float(tick) * 0.7) * 2.0 if is_on_floor() and absf(velocity.x) > 8 else 0.0
-	draw_rect(Rect2(-9, -27, 18, 24), ink)
-	draw_rect(Rect2(-7, -25, 14, 20), blue)
-	draw_rect(Rect2(-10, -18, 20, 4), Color("ef875f"))
-	draw_rect(Rect2(-6, -4, 5, 4 + stride), ink)
-	draw_rect(Rect2(2, -4, 5, 4 - stride), ink)
-	draw_rect(Rect2(1 if facing > 0 else -6, -24, 5, 5), Color("fff9e9"))
-	draw_rect(Rect2(4 if facing > 0 else -6, -23, 2, 3), ink)
+	# legs (navy) to the feet, waddle when walking
+	draw_rect(Rect2(-5, -4, 3, 4 + stride), trouser)
+	draw_rect(Rect2(2, -4, 3, 4 - stride), trouser)
+	# body: outline, blue shirt, navy trousers, belt
+	draw_rect(Rect2(-9, -19, 18, 15), ink)
+	draw_rect(Rect2(-7, -17, 14, 7), uniform)
+	draw_rect(Rect2(-7, -10, 14, 6), trouser)
+	draw_rect(Rect2(-8, -11, 16, 2), flap)
+	# strap across chest (front shoulder -> back hip)
+	draw_line(Vector2(5.0 * f, -17), Vector2(-6.0 * f, -10), flap, 2.0)
+	# mailbag on the back hip (mirrors with facing)
+	var bag_left := -12.0 if f > 0 else 5.0
+	draw_rect(Rect2(bag_left - 1.0, -14, 9, 10), ink)
+	draw_rect(Rect2(bag_left, -13, 7, 8), bag_col)
+	draw_rect(Rect2(bag_left, -13, 7, 3), flap)
+	draw_rect(Rect2(bag_left + 3.0, -11, 1, 2), gold)
+	# head (skin) with outline
+	draw_rect(Rect2(-6, -26, 12, 8), ink)
+	draw_rect(Rect2(-5, -25, 10, 6), skin)
+	# cap: crown + forward brim + gold badge (brim mirrors with facing)
+	draw_rect(Rect2(-7, -30, 14, 6), ink)
+	draw_rect(Rect2(-6, -29, 12, 5), trouser)
+	var brim_x := -1.0 if f > 0 else -10.0
+	draw_rect(Rect2(brim_x, -24, 11, 2), trouser)
+	draw_rect(Rect2(-2, -27, 4, 2), gold)
+	# eye on the front of the face
+	draw_circle(Vector2(2.5 * f, -22), 1.2, ink)
