@@ -128,9 +128,9 @@ func run() -> void:
 	await fresh()
 	var route = Route.new()
 	var route_ticks := 0
-	var climb_flames := [Rect2(1136,266,14,14), Rect2(1405,306,60,14), Rect2(1606,266,14,14), Rect2(1866,186,14,14)]  # B1-L1, street, B2-L1, B2-L2
+	var climb_flames := [Rect2(1136,266,14,14), Rect2(1485,306,45,14), Rect2(1666,266,14,14), Rect2(1926,186,14,14)]  # B1-L1, street, B2-L1, B2-L2
 	var min_clears := [999.0, 999.0, 999.0, 999.0]
-	while game.state == Game.State.PLAYING and route_ticks < 2500:
+	while game.state == Game.State.PLAYING and route_ticks < 3000:
 		route.step(game.player)
 		await steps(1)
 		route_ticks += 1
@@ -143,16 +143,20 @@ func run() -> void:
 					min_clears[fi] = minf(min_clears[fi], fl.position.y - py)
 	check("complete-real-route", game.state == Game.State.COMPLETE and game.deaths == 0 and game.rescued_count == game.survivors.size(), {"state":game.state,"deaths":game.deaths,"ticks":route_ticks,"rescued":game.rescued_count,"pos":str(game.player.position),"marks":route.next_jump})
 	check("route-beats-timer", game.state == Game.State.COMPLETE and game.elapsed < float(game.level.time_limit), {"elapsed":game.elapsed, "limit":game.level.time_limit})
-	check("reached-b2-roof-both-rescued", game.state == Game.State.COMPLETE and game.rescued_count == 2 and game.player.position.x > 1900.0 and game.player.position.y < 180.0, {"rescued":game.rescued_count, "pos":str(game.player.position)})
+	check("reached-b2-roof-both-rescued", game.state == Game.State.COMPLETE and game.rescued_count == 2 and game.player.position.x > 2000.0 and game.player.position.y < 180.0, {"rescued":game.rescued_count, "pos":str(game.player.position)})
 	check("flame-clearance-positive", min_clears[0] > 0.0 and min_clears[1] > 0.0 and min_clears[2] > 0.0 and min_clears[3] > 0.0, {"B1L1":min_clears[0],"street":min_clears[1],"B2L1":min_clears[2],"B2L2":min_clears[3]})
 	# Gating: reaching the B2 roof exit without both rescues must NOT complete.
 	await fresh()
-	game.player.position = Vector2(2013, 164)  # on the B2 roof, at the exit, 0 rescued
+	game.player.position = Vector2(2073, 164)  # on the B2 roof, at the exit, 0 rescued
 	await steps(4)
 	check("exit-locked-without-rescues", game.state == Game.State.PLAYING and game.rescued_count == 0, {"state":game.state,"rescued":game.rescued_count})
-	# A rescued survivor is fully removed from the path (no lingering trigger / HELP).
+	# The person becomes reachable ONLY after hosing: extinguish, then walk right and rescue -> removed.
 	await fresh()
-	game.player.position = Vector2(1240, 240)  # stand on the person (B1 window)
+	game.player.position = Vector2(1220, 240)  # on B1-PW, in hose range
+	await steps(3)
+	game.player.test_water_pressed = true
+	await steps(250)                           # extinguish the blocking fire
+	game.player.position = Vector2(1335, 240)  # now walk to the (previously blocked) person
 	await steps(4)
 	check("survivor-removed-on-rescue", game.survivors[0].rescued and not game.survivors[0].area.monitoring and game.player.bag_types.size() >= 1, {"person_rescued":game.survivors[0].rescued, "still_monitoring":game.survivors[0].area.monitoring, "bag":game.player.bag_types.size()})
 	# Stick-up platform flames must kill a player standing/walking in them.
@@ -161,11 +165,11 @@ func run() -> void:
 	await steps(4)
 	check("walk-into-flame-B1L1", game.state == Game.State.DYING, {"state":game.state})
 	await fresh()
-	game.player.position = Vector2(1613, 280)  # in the B2-L1 flame
+	game.player.position = Vector2(1673, 280)  # in the B2-L1 flame
 	await steps(4)
 	check("walk-into-flame-B2L1", game.state == Game.State.DYING, {"state":game.state})
 	await fresh()
-	game.player.position = Vector2(1873, 200)  # in the B2-L2 flame
+	game.player.position = Vector2(1933, 200)  # in the B2-L2 flame
 	await steps(4)
 	check("walk-into-flame-B2L2", game.state == Game.State.DYING, {"state":game.state})
 	game.start_session()
@@ -178,6 +182,49 @@ func run() -> void:
 	check("timer-expiry-fails", game.state == Game.State.DYING and game.death_reason == "Out of time!", {"state":game.state, "reason":game.death_reason})
 	await steps(45)
 	check("timer-resets-on-retry", game.state == Game.State.PLAYING and game.elapsed < 1.0, {"state":game.state, "elapsed":game.elapsed})
+	# --- Hose / blocking-fire mechanic ---
+	await fresh()
+	game.player.position = Vector2(1220, 240)  # on B1-PW, in hose range (clear of the fire)
+	await steps(3)
+	game.player.test_water_pressed = true
+	await steps(210)                            # ~3.5 s in: shrinking but NOT out yet
+	var lit_at_3_5: bool = game.fire_active
+	await steps(45)                             # cross the ~4 s mark
+	check("hose-extinguishes-fire", lit_at_3_5 and not game.fire_active, {"lit_at_3.5s":lit_at_3_5, "fire_active":game.fire_active, "extinguish_ticks":game.extinguish_ticks})
+	await fresh()
+	game.player.position = Vector2(64, 320)  # far from the fire
+	await steps(3)
+	game.player.test_water_pressed = true
+	await steps(20)
+	check("hose-out-of-range-noop", game.fire_active, {"fire_active":game.fire_active})
+	await fresh()
+	game.player.position = Vector2(1278, 240)  # standing in the lit blocking fire
+	await steps(4)
+	check("blocking-fire-kills-on-touch", game.state == Game.State.DYING, {"state":game.state})
+	# Progressive extinguish: at t=2 s the fire is half height but STILL lethal + blocking.
+	await fresh()
+	game.player.position = Vector2(1220, 240)  # in range
+	await steps(3)
+	game.player.test_water_pressed = true       # start hosing (fire full)
+	await steps(120)                             # t=2 s -> fire down to ~half height, still lit
+	var half_ticks: int = game.extinguish_ticks
+	game.player.position = Vector2(1278, 240)   # step into the HALF-height fire
+	await steps(2)
+	check("half-size-fire-still-kills", game.state == Game.State.DYING and game.fire_active and not game.survivors[0].rescued, {"state":game.state, "fire_active":game.fire_active, "ticks_at_touch":half_ticks})
+	await fresh()
+	game.player.position = Vector2(1230, 240)  # on the runway, LEFT of the lit fire
+	await steps(3)
+	game.player.test_axis = 1.0                # walk right toward the person -- straight through the fire
+	await steps(30)
+	check("person-rescue-blocked-until-extinguished", game.state == Game.State.DYING and not game.survivors[0].rescued, {"state":game.state, "person_rescued":game.survivors[0].rescued})
+	await fresh()
+	game.player.position = Vector2(1220, 240)
+	await steps(3)
+	game.player.test_water_pressed = true
+	await steps(250)               # extinguish the fire
+	game.resolve_contacts(true, false)  # then die
+	await steps(45)                # auto-retry
+	check("extinguish-resets-on-retry", game.fire_active and game.extinguish_ticks == 0 and game.state == Game.State.PLAYING, {"fire_active":game.fire_active, "state":game.state})
 	var report := {"scope":"First Steps slice; not full GDD acceptance or human playtesting", "engine":Engine.get_version_info().string,"created_at":Time.get_datetime_string_from_system(true),"results":results,"failures":failures}
 	var out := ProjectSettings.globalize_path("res://../evidence")
 	DirAccess.make_dir_recursive_absolute(out)

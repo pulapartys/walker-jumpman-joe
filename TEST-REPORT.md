@@ -208,4 +208,35 @@ Rebuilt the level as **two burning buildings** (person in B1, dog in B2, a burni
 - `exit-locked-without-rescues` (now at the B2 roof), `survivor-removed-on-rescue` (new person pos), `route-beats-timer` (12.7 / 30 s) all pass. **No assertions weakened.**
 
 ### Manual (human) — ⏳ PENDING
-Play it: climb B1 → rescue person → down → cross the burning street → climb B2 → rescue dog → jump off the B2 roof. **Watch the timer** — this level is longer than the single-building one, so **30 s may feel tight** (worth re-checking / re-tuning).
+Play it: climb B1 → rescue person → down → cross the burning street → climb B2 → rescue dog → jump off the B2 roof.
+
+---
+
+## Hose mechanic — runtime verification (automated) · 2026-09-24
+Added an **extinguishable blocking fire** that stands **between** the firefighter and a **visible trapped person** on B1's window ledge, a new **W = "water"** input, and tuned the landing/descent/street for safety. Documented predict-before-code (CHANGE-BRIEF hose revision).
+
+**Ledge layout (left → right):** landing runway (x1175–1250) → **blocking fire (1250–1306)** → **person at 1335** (visible, HELP! bubble, clear of the fire). Fire lethal + blocks the path until hosed.
+
+**Progressive extinguish (updated 2026-09-24):** W-in-range starts the water; the fire is **full**, shrinks to **half height at t=2 s**, and is **gone at t=4 s**. The kill-zone shrinks from the top *with* the flames (`fire_height()` drives both the drawing and the collision), but the **base stays lethal + blocking until fully out** — walking in mid-extinguish still kills, and the person is unreachable until t=4 s. Water visual lingers ~1 s after. **Timer set to 40 s** (human-playtested fair).
+
+### System tests (automated) — ✅ 50/50
+`test_game.gd` **41/41** (added 6 hose checks), `test_keyboard.gd` **9/9**.
+- **Safe landing:** `complete-real-route` runs the full path — approach → climb B1 → **hose the fire** → walk right → rescue person → descent → street → climb B2 → rescue dog → roof — with **0 deaths** (1040 ticks, ~17.4 s). Lands with ~40 px runway *left* of the fire, stops (no slide-in), hoses, waits out the ~4 s extinguish, then walks through. Flame clearances all positive (street **+17.8 px**).
+- **Progressive lethality:** `half-size-fire-still-kills` — at **t=2 s** the fire is half height (`extinguish_ticks=120`, exactly half) yet stepping in → **DYING, person NOT rescued**. `hose-extinguishes-fire` — still lit at 3.5 s, **out by ~4 s** (`lit_at_3.5s=true` → gone).
+- **Gating both directions:** `person-rescue-blocked-until-extinguished` *walks into the lit fire* → **DYING, not rescued** (unreachable while lit); `survivor-removed-on-rescue` *extinguishes first, then walks to the person* → **rescued & removed** (reachable only after fully out).
+- `hose-out-of-range-noop` (W far → fire stays), `blocking-fire-kills-on-touch` (DYING), `extinguish-resets-on-retry` (fire back to full + timer 40 s on retry) — **all PASS.**
+- `route-beats-timer` passes at the **40 s** limit (~17.4 s run). Existing controls untouched (`test_keyboard` 9/9); **W is additive**. No assertions weakened.
+
+### Manual (human) — ⏳ PENDING
+Reach B1's window → see the **trapped person behind the fire** + the **"Press W to hose the fire"** prompt → tap **W** → watch the **fire shrink (full → half → gone over ~4 s)** while water pours → then walk across and rescue the person. Confirm you **can't slip through the half-size fire**. Then street → B2 → roof. **Timer 40 s — confirm a normal run still finishes comfortably (bot run ~17.4 s).**
+
+---
+
+## Readability + figure pass (drawing only) · 2026-09-24
+Pure repaint — **no collision / trigger / tuning / control / survivor-exit-position changes**. Suite still **50/50** (`fixed-jump` rise **56.07 px** unchanged). Verified in rendered screenshots (`evidence/screens/read-b1-person.png`, `read-b2-dog.png`):
+- **Facades** → **very light brown**, with **half as many beige/cream windows** (brown frames) — no orange facade windows, so the **only orange on screen is the actual fire**, which now pops; the dark firefighter + survivors read strongly against the light wall.
+- **Survivors redrawn** to read at game size: the **person** is a clear waving human (head + face, torso, one raised arm, legs); the **dog** has ears, a snout, a tail, four legs. Both get a bright fill + dark outline.
+- **Windows** are now **dark openings** (thin frame + dark interior + soft backlight), not solid boxes — survivors no longer share their window's colour and pop against it.
+- **HELP! bubbles** enlarged (bigger box + size-15 text) with a **pointer/tail** to the survivor; the "Press W to hose the fire" prompt lifted higher so it's clearly visible above the flames + bubble, and **W: hose** added to the top controls bar.
+- **Firefighter** gets a pale **rim light** so it reads against dark ledges + burning interiors.
+- Screenshot check: firefighter, clearly-a-person + clearly-a-dog survivors, HELP! signs, and the fire all read cleanly on the buildings. ✅

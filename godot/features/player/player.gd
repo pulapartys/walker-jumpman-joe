@@ -16,6 +16,7 @@ var test_control: bool = false
 var test_axis: float = 0.0
 var test_jump_pressed: bool = false
 var test_jump_held: bool = false
+var test_water_pressed: bool = false  # hose input hook for the scripted route / tests
 
 func _ready() -> void:
 	name = "Player"
@@ -86,6 +87,9 @@ func _draw() -> void:
 	var gold := Color("f1c40f")     # helmet badge
 	var f := facing                 # +1 right, -1 left
 	var stride := sin(float(tick) * 0.7) * 2.0 if is_on_floor() and absf(velocity.x) > 8 else 0.0
+	# pale rim light so the dark suit separates from dark ledges + burning interiors
+	var rim := Color(0.88, 0.94, 0.99, 0.85)
+	draw_rect(Rect2(-10, -31, 20, 27), rim)
 	# boots to the feet, step when walking
 	draw_rect(Rect2(-5, -4, 3, 4 + stride), ink)
 	draw_rect(Rect2(2, -4, 3, 4 - stride), ink)
