@@ -36,13 +36,13 @@ What each code file does, so a reviewer understands the starting point:
 
 | File | Change | Assignment requirement | Status |
 |---|---|---|---|
-| `features/player/player.gd` | Rewrite `_draw()` → **postman** character (keep collider in `_ready()`) | New visual identity | ✅ applied · system + manual tests pass |
+| `features/player/player.gd` | `_draw()` → **firefighter** (Iteration 3; postman was prior) + `rescued` var for bag heads | New visual identity | ✅ applied · system pass · manual ⏳ |
 | `features/player/tuning.gd` | — | Preserve movement/jump feel | ⛔ must not change |
-| `levels/first_steps.json` | Add platforms/landings, widen level, **move finish** | Extend playable level (≥2 new landings) | 🔲 planned |
-| `game/session.gd` | Fix hard-coded draw coords (grid/background extent, hazard Y); re-skin finish → **postbox** ✅; theme labels (mail/route); check camera bounds | Keep visuals matched to physics on the wider level | 🔧 in progress · postbox done · rest pending |
-| `ui/hud.gd` | Verify/adjust progress bar for new width | Readable presentation | 🔲 planned |
-| `tests/route_driver.gd` | Update jump marks for the extended route | Updated route fixture | 🔲 planned |
-| `tests/test_game.gd` | Update finish/route assertions; add a check for the extension | Regression + new-section check | 🔲 planned |
+| `levels/first_steps.json` | width 960→1900; original approach kept; climb P1–P5 + dog ledge PD (open sky); finish → window; `survivors`; flames | Extend playable level (≥2 new landings) | ✅ built · route test passes · manual ⏳ |
+| `game/session.gd` | flames ✅; finish → **window** ✅ (data-driven, `is_on_floor` gate); widened bg/grid/mountains ✅; survivors drawn ✅; themed labels/death ✅ (rescue Area2Ds = Inc 4) | Firefighter theme + level extension | ✅ built · route test passes · manual ⏳ |
+| `ui/hud.gd` | title→FIREFIGHTER RESCUE; progress denominator data-driven from `level.finish`; themed text | Readable presentation | ✅ built |
+| `tests/route_driver.gd` | rewritten: 4-phase route (climb → dog ledge → jump back → window) | Updated route fixture | ✅ built |
+| `tests/test_game.gd` | route assertions updated; added `extension-climb-and-detour` + `flame-clearance-positive` | Regression + new-section check | ✅ built |
 | `tests/test_keyboard.gd` | Likely unchanged | Preserve control checks | 🔲 planned |
 
 ---
@@ -130,6 +130,46 @@ What each code file does, so a reviewer understands the starting point:
   untracked for now; to be curated for the final submission.
 - **Human/AI:** Human playtested and approved; AI updated docs, reverted the
   config, and prepared the commit/PR.
+
+### 2026-09-23 · Entry 7 — PIVOT to "Firefighter Rescue" + increments 1–2
+- **Pivot:** theme changed Postman's Rush → **Firefighter Rescue** (CHANGE-BRIEF §0). The postman milestone stays on `main` (8672fe3) as honest history.
+- **Increment 1 — Firefighter (Iteration 3):** `player.gd` `_draw()` → red helmet (dome + brim + back beavertail + gold badge), dark turnout coat + reflective stripe, air tank, orange rescue duffel, boots. Added `rescued` var (drives heads-in-bag; reset on retry). Pure repaint.
+- **Increment 2 — Flames:** `session.gd` spike drawing → **data-driven flames** (orange + yellow tongues, uses hazard Y so flames on raised platforms draw correctly). Collision unchanged.
+- **Tests:** 34/34 (`test_game.gd` 25/25, `test_keyboard.gd` 9/9); jump rise 56.0747, spike collision, 325-tick route all identical → proven pure repaints.
+- **Manual:** ⏳ pending human visual check (firefighter L/R + jump; flames read as fire).
+- **Human/AI:** Human wrote the firefighter spec + chose the theme; AI implemented the drawings and ran the suites.
+
+### 2026-09-23 · Entry 8 — Increment 3: extended Level 1 (climb + dog detour + window)
+- **Level data (`first_steps.json`):** width 960→1900; kept the original 5 solids (approach preserved); added climb platforms P1–P5 + a dog ledge PD (relocated to **open sky**, right of P5, per review); finish → **window** `[1560,112,26,44]`; added `survivors` (person @P2, dog @PD).
+- **`session.gd`:** widened background/grid/mountains (data-driven to `level.width`); postbox → **window** (data-driven); drew survivors; re-themed labels + death text. **Finish now requires `is_on_floor()`** so the climb arc can't trip it mid-air (documented addition; still ungated — rescue gate is Inc 4).
+- **`hud.gd`:** FIREFIGHTER RESCUE / FIRST ALARM; progress denominator data-driven; themed menu/complete text.
+- **`route_driver.gd`:** 4-phase route (climb → dog ledge → jump back → window). **`test_game.gd`:** added `extension-climb-and-detour` + `flame-clearance-positive`; tick cap 900→2000.
+- **Reviewer gate — MET (real engine):** route reaches the window with **0 deaths** and **executes the detour** (drop → dog → return → finish, 758 ticks). Real flame clearances: **P2→P3 13.4px, P3→P4 12.1px** (fixed from a 0.07px graze by lowering both flame rects). **36/36 automated pass.**
+- **Manual:** ⏳ pending human playtest (route, failure/recovery, detour discoverability, readability).
+- **Human/AI:** Reviewer set the gate + caught the mid-jump window trigger and the tight flame margins; AI built the level/draws/route/tests, traced the real physics, and applied the fixes.
+
+### 2026-09-23 · Entry 9 — Increment 4: rescue + gated exit + fire-on-platforms + clarity
+- **Fire (revision):** removed the toothless gap flames; placed flames as jump-over obstacles **on** P1/P3/P4 (+ ground). Real jump clearances 28 / 24 / 32 px (route test).
+- **Rescue (touch):** survivor `Area2D`s (person @P2, dog @detour ledge) in `session.gd`; overlapping rescues them (removed, counter++, `player.rescued` drives the head-in-bag), resets on retry.
+- **Gated exit:** "FIRE ESCAPE" completes only when BOTH rescued AND reached on foot; LOCKED (lock icon + "Rescue everyone first!" cue) vs UNLOCKED ("JUMP OUT →"). State machine unchanged.
+- **Clarity (`hud.gd` + `session.gd`):** persistent HUD objective (PERSON/DOG → check), HELP! bubbles over un-rescued survivors, themed intro + finish counts.
+- **Tests:** route grabs both survivors + reaches exit (0 deaths, 750 ticks); added `exit-locked-without-rescues`; flame clearance measured on the platform flames. **37/37 pass.**
+- **Manual:** ⏳ pending human playtest.
+- **Human/AI:** reviewer approved touch-to-rescue + reach-unlocked-exit; AI built it, fixed a 5.4px flame graze → 24–32px, and verified gating.
+
+### 2026-09-23 · Entry 10 — Increment 4, Iteration 2 (clarity/feedback fixes)
+- **Playtest findings:** rescue had no visible payoff (1.3px bag head, no SAVED! popup); flames didn't read as lethal.
+- **Fixes:** `player.gd` — big **typed bag heads** (person + dog w/ ears, grow per rescue) via new `bag_types`. `session.gd` — **"SAVED!" popup** (rises + fades) on rescue; **bolder/vivid flames** (VISUAL only — collision rects unchanged). `test_game.gd` — added `survivor-removed-on-rescue`.
+- **Verified:** **38/38** (37 + 1 new; no weakened assertions). Flame clearances held at **28/24/32px** (collision untouched despite bigger visual). Rescued survivor confirmed removed (monitoring off).
+- **Manual:** ⏳ re-playtest pending.
+- **Human/AI:** reviewer flagged the no-feedback + unreadable-fire issues; AI implemented the visible payoff, popup, bolder flames, and the removal check.
+
+### 2026-09-23 · Entry 11 — Increment 4, Iteration 3 (lethality + stale-redraw + hidden-label)
+- **Root causes:** flame rects sat at the surface (inside platforms) so they didn't kill walking; `session._draw()` was only queued at startup so dynamic level visuals never refreshed; the "02" label sat behind a platform.
+- **Fixes:** raised the 3 climb flame rects to stick up (P1 y268 / P3 y196 / P4 y160); added `queue_redraw()` to `session._physics_process` (level refreshes each frame → survivors vanish, SAVED! animates, exit unlocks); moved the "02 / CLIMB & RESCUE" label to open air.
+- **Tests:** added `walk-into-flame-P1/P3/P4` (assert DYING) — flames now lethal on touch. Route still completes (0 deaths, both rescued); clearances to taller flames P1 14 / P3 10 / P4 18px. **41/41, none weakened.**
+- **Visual (human) to verify:** flames kill on touch (also now tested), rescued survivors vanish, SAVED! shows, exit unlocks.
+- **Human/AI:** reviewer found the bugs in playtest; AI diagnosed the redraw + rect-placement root causes, fixed, and added lethality tests.
 
 ---
 

@@ -1,149 +1,159 @@
 # CHANGE-BRIEF — walker-jumpman-joe
 
-> **Predictions written BEFORE implementation**, per Assignment 1 (Extend Walker
-> Jumpman). This is a dated, honest record. Original predictions are **retained**.
-> Later changes go in the **Revisions log** at the bottom — they are NOT edited
-> into the predictions above — so the record stays honest even where a prediction
-> turns out wrong.
+> **Predictions written BEFORE implementation**, per Assignment 1. Honest, dated
+> record: predictions are **retained**; changes go in the **Revisions log** at the
+> bottom (never rewritten to look correct).
 
 - **Assignment:** Assignment 1 — Extend Walker Jumpman (CSYE 7270, Fall 2026)
 - **Student:** Sreeja Pulaparty (pulaparty.s@northeastern.edu)
-- **Project:** walker-jumpman-joe
-- **Starter credited:** nikbearbrown/walker-jumpman ("First Steps" slice)
+- **Project:** walker-jumpman-joe · **Starter:** nikbearbrown/walker-jumpman
 - **Engine:** Godot 4.7.2.stable.official.ed1daf0bf · macOS
-- **Baseline source revision:** 9387542 (branch: `working`)
-- **Brief created:** 2026-09-22
+- **Baseline:** starter 9387542; postman milestone 8672fe3 (on `main`)
+- **Updated:** 2026-09-23
 
 ---
 
-## 0. Theme / game concept — "Postman's Rush"
+## 0. Theme — "Firefighter Rescue" (supersedes "Postman's Rush")
 
-A postman runs a delivery route, crossing streets/rooftops safely and reaching
-the **post office / postbox** at the end. Non-combat; the challenge is "can I
-complete the route safely?" — which keeps the starter's control/retry feel.
+**Pitch:** You're a firefighter racing a countdown to climb a burning building,
+rescue trapped survivors into your rescue bag, and jump out the window before the
+fire wins.
 
-**Full vision (someday, NOT all implemented — like the starter's own GDD):**
-mail pickups (letters/packages/special), a delivery count, optional stars, and
-multiple themed levels (Neighborhood → Downtown → Stormy → Christmas Rush).
+**What this assignment builds (Tier 1 = increments 1–5, a complete game):**
+firefighter character, flames (reskinned spikes), an extended Level 1 (reskinned
+ground approach → climb with survivors → window finish), rescue-into-bag + a gated
+window, and a countdown timer.
 
-**What this assignment actually implements (a focused slice):** re-theme the
-character as a postman, extend the existing level into a short delivery route with
-≥2 new jump landings and a route decision, re-skin the hazard as a construction
-hazard, and relocate the finish to a **postbox**. (Optional stretch, decided at
-the level phase: a few mail pickups + a delivery count on the finish screen.)
+**Someday / stretch (documented, built only if time allows):** Level 2 + the
+multi-level machinery (Tier 3), true-vertical camera (Tier 2). **Out of scope:**
+lever, water/hose, follow-AI companions.
 
----
-
-## 1. Character redesign — Iteration 2: Postman (predicted before coding)
-
-> Iteration 1 was a chick (idea only, never coded); superseded by this postman
-> when we adopted the Postman's Rush theme. Full chick record: CHARACTER-DESIGN.md
-> Part 6. See the change in the Revisions log.
-
-### Concept
-Replace the starter's "guy in a box" with a **postman / mail carrier**: a blue
-uniform, a peaked cap, and a brown mailbag — a runner whose shape clearly differs
-from the original at a glance and matches the game's theme.
-
-### Provenance
-**Original geometric drawing** inspired by the generic cartoon-postman concept
-(blue uniform + peaked cap + satchel). Stock images were viewed only as visual
-reference and are **NOT imported or copied**; this will be documented in
-`SOURCES.md`.
-
-### Distinguishing visual features (vs. the starter)
-- **New silhouette (the key change):** a **cap crown + forward brim** (top/front)
-  and a **mailbag** on the back hip (back) — all break the original's plain
-  rectangular outline.
-- **New identity:** postal-blue uniform + navy cap/trousers + brown bag + gold
-  cap badge, vs. the starter's plain blue box + orange sash.
-- **Readable features:** shirt/trousers with a belt, a strap across the chest, a
-  skin-tone face with an eye, and walking legs.
-- **Facing cue:** brim + eye lead the direction of travel; mailbag + strap trail
-  behind — so left/right is obvious.
-
-### What must remain UNCHANGED (and how I ensure it)
-This step is a **pure repaint** — it edits only `player.gd` `_draw()`.
-- **Controls** — untouched (`session.gd` input map not edited).
-- **Movement / jump tuning** — untouched (`features/player/tuning.gd` not edited:
-  speed 160, jump_velocity −320, gravity 960, coyote 6, buffer 6).
-- **Collision behavior** — untouched: the collider stays **18×28 at offset
-  (0,−14)**; `player.gd` `_ready()` is not edited.
-- **Retry / pause / completion** — untouched (`session.gd` state machine not edited).
-- **Prediction:** all **34 automated checks** (`test_game.gd` + `test_keyboard.gd`)
-  still pass with **identical numbers** (e.g., jump rise 56.07 px), because no
-  physics-relevant code changes.
-
-_No justified departure from the collider or behavior is planned for this step._
-
-### Predicted failure cases + how I'll check them
-1. **Facing-flip error (left/right).** Mirrored elements (brim, mailbag, strap,
-   eye) could land on the wrong side or point the wrong way when facing left.
-   - *Check:* play, hold **left** then **right**, and confirm the brim + eye lead
-     while the bag + strap trail. Optionally capture one facing-left and one
-     facing-right frame.
-2. **Visual/collision mismatch.** The cap/brim (top/front) and mailbag (back) poke
-   outside the 18×28 collider, so the postman could look like it should collide
-   sooner/later than it does, or the body might not fill the box.
-   - *Check:* (a) run `test_game.gd` + `test_keyboard.gd` and confirm all pass
-     **unchanged** (proves the collider is identical); (b) confirm the body fills
-     the box and feet sit on the floor line; (c) shrink the pokes if misleading.
-3. **Readability / clutter at thumbnail size.** The postman has more parts than
-   the starter box; it could read as a blob at ~18×28 px.
-   - *Check:* play and confirm it reads as a postman; if possible, ask another
-     person to identify it. Simplify features if unclear.
-
-### Success criteria
-Recognizable as a postman at thumbnail size; reads correctly facing left, facing
-right, standing, and jumping; body aligned with the collider; **all 34 automated
-checks pass unchanged**.
-
-> Full design reasoning and the proposed `_draw()` code: see
-> [CHARACTER-DESIGN.md](CHARACTER-DESIGN.md) Part 7 (Iteration 2: Postman).
+**Pivot note:** we first shipped a **postman** character + postbox finish (commit
+8672fe3, on `main`). On 2026-09-23 we pivoted to the firefighter theme because it
+gives the level a built-in decision and a natural reason to move the finish. The
+postman remains in git history; the character iteration history is preserved.
 
 ---
 
-## 2. Level extension — (to be written BEFORE building the level)
+## 1. Character — Iteration 3: Firefighter (predicted before coding)
 
-Direction locked (details/predictions to be filled in before any level code):
-- **Theme:** delivery route (Postman's Rush).
-- **Finish:** relocate to a **postbox / post office** at the far right (re-skin the
-  goal drawing in `session.gd`).
-- **New section:** ≥2 new jump landings (rooftops/sidewalk platforms + gaps).
-- **Decision/challenge:** e.g., a risky rooftop shortcut vs. a safer street route
-  that rejoin before the postbox.
-- **Hazard:** re-skin the spike as a **construction hazard**.
-- **Optional stretch:** a few mail pickups + a "📬 N delivered" line on the finish
-  screen (scope decision A vs. B pending).
-- Preserve a usable route through the original section + all failure/retry behavior.
+**Concept:** replace the postman with a **firefighter** — red helmet (dome + brim
++ back beavertail + gold badge), dark turnout coat with a reflective yellow stripe,
+an air tank high on the back, an orange **rescue duffel** on the back hip, boots.
 
-_Full level predictions (with ≥2 failure cases) go here before we build._
+**Distinguishing features vs. starter:** the helmet (top silhouette), the rescue
+bag + air tank (back silhouette), and the dark-coat/yellow-stripe identity.
+
+**Rescued indicator:** small heads poke out of the bag as survivors are rescued
+(driven by a `rescued` count set by the rescue mechanic; 0 shows none).
+
+**Provenance:** original geometric drawing; no imported art.
+
+**Stays unchanged:** pure repaint of `player.gd` `_draw()`; the 18×28 collider,
+movement, and `tuning.gd` untouched. **Prediction:** all 34 automated checks pass
+with baseline-identical numbers.
+
+**Failure cases + checks:** (1) *facing-flip* — helmet beavertail/tank/bag could
+land on the wrong side facing left → play L/R and confirm they trail behind.
+(2) *visual/collision mismatch* — helmet/bag pokes could mislead → run the 34
+tests (collider proof) + confirm the body fills the box.
+
+---
+
+## 2. Fire hazard — flames (predicted)
+
+Redraw the spike hazard in `session.gd` `_draw()` as **flames** (orange + yellow
+tongues), made **data-driven** (uses the hazard's Y, not hard-coded 320) so flames
+placed on raised platforms draw correctly. **Collision unchanged:** touch = die +
+retry. **Check:** run `test_game.gd` (`actual-spike-collision` still passes).
+
+---
+
+## 3. Level extension — the climb + window finish (predicted)
+
+- **Ground floor** = the original First Steps route, reskinned as the building
+  approach (cracked floor/debris, the first flame) → keeps the original route usable.
+- **Climb** = new section: **2+ new landings requiring jumps**, going
+  **up-and-to-the-right** (stays on the existing X-only camera; no vertical camera).
+- **Decision:** a risky short hop **through a flame** (fast) vs. a longer safe
+  detour to reach the dog.
+- **Survivors:** a person on the main upper path; a dog slightly off-path (the
+  detour reward).
+- **Finish:** a **window** at the top (replaces the postbox), which completes
+  **only when both survivors are rescued**.
+- Fix hard-coded draw coords that won't follow the JSON: background rectangle,
+  grid lines, zone labels, and the HUD progress denominator.
+
+**Failure cases + checks:** (1) a new platform is **unreachable** with the fixed
+jump (~56 px rise / spacing) → playtest each jump + update the route test.
+(2) a **flame/label drawn at the wrong Y** vs. its collision on a raised platform →
+verify drawing matches the hazard/goal data.
+
+---
+
+## 4. Rescue mechanic + gated window (predicted)
+
+_Finalized for Increment 4 (predicted before the code):_
+
+- **Fire placement (revision):** flames become **stick-up obstacles on the platforms**
+  (reskinned like the ground spike) near each platform's right edge, so the gap-jump
+  takes off *before* the fire and a player who walks into it burns — fire now shapes
+  movement on each floor. Toothless gap-flames removed. Every flame stays jumpable
+  with margin (verified by re-running the route test).
+- **Rescue (touch to rescue):** each survivor (person, dog) = an `Area2D` at its
+  position. Overlapping it rescues them: remove from the world, increment a rescued
+  count, set `player.rescued` (drives the head-in-bag drawing), and the "HELP!"
+  bubble over them disappears. Survivors + count **reset on retry**.
+- **Gated exit (window → "FIRE ESCAPE"):** completes only when **both** survivors are
+  rescued **and** the player reaches it on foot. Locked (not all saved): drawn darker
+  with a lock; touching it flashes "Rescue everyone first!". Unlocked (both saved):
+  brightened with a "JUMP OUT →" prompt. **No precise mid-air trigger — reaching the
+  unlocked exit = win.** State machine unchanged; only the *condition* to reach
+  COMPLETE gains "both rescued."
+- **Clarity layer:** persistent HUD objective (person/dog, filling to a check as
+  saved); themed intro line; finish screen shows saved counts + time.
+
+**Failure cases + checks:** (1) *rescues don't reset on retry* → die after saving one,
+retry, confirm count = 0 and survivors reappear. (2) *exit completes without both* →
+reach it at 1/2, confirm it does NOT finish + the locked cue shows (add an automated
+gating check). (3) *a platform flame grazes/blocks the route* → re-run the route test,
+report real clearances, fix geometry (not the test).
+
+---
+
+## 5. Countdown timer (predicted)
+
+- Change the HUD timer from counting **up** to counting **down** from a per-level
+  limit (~45–60 s for Level 1, tunable).
+- Reaching **0 = attempt fails = retry** (whole attempt resets, timer back to full).
+- An **added fail reason only** — must not change controls, tuning, collider,
+  pause, or completion flow. Tuned so a human **and** the automated route finish in
+  time.
+
+**Failure cases + checks:** (1) *tuned too tight* → the auto route or a human can't
+finish → run the route test within the limit; adjust. (2) *timer doesn't reset on
+retry* → die, retry, confirm it returns to full.
+
+---
+
+## What must NOT change
+Movement/jump tuning (`tuning.gd`), the 18×28 collider, and the pause/retry/
+completion **flow**. The gated window and the timer are documented **additions**
+(a new win *condition* and a new fail *reason*), not changes to the existing feel.
 
 ---
 
 ## Revisions log
-
-_Add dated entries as predictions are tested or change. Do **not** edit the
-predictions above._
-
-- **2026-09-22** — Brief created. Character Iteration 1 = 🐤 chick (idea only).
-- **2026-09-22** — Adopted the **"Postman's Rush"** theme. Character switched from
-  Iteration 1 (chick) → **Iteration 2 (postman)** to match the theme; finish will
-  become a **postbox**. The chick was never written to code, so this is a
-  pre-implementation plan change, not a post-hoc rewrite. Full chick record kept
-  in CHARACTER-DESIGN.md Part 6.
-- **2026-09-22** — Character prediction **TESTED**: postman `_draw()` applied; all
-  **34 automated checks passed** with baseline-identical numbers (jump rise
-  56.0747 px, coyote/buffer, spike, retries, 325-tick route) — confirming the
-  "pure repaint / physics unchanged" prediction. **Manual visual check** (facing
-  L/R, standing, jumping) still ⏳ pending. Full results: **TEST-REPORT.md**.
-  (Predictions above unchanged.)
-- **2026-09-22** — Implemented the **postbox finish** drawing early (theming):
-  `session.gd` finish flag → red postbox, drawn **data-driven** from `level.finish`.
-  This is a cosmetic re-skin at the current finish spot; the structural level
-  extension (new landings, relocating the finish, the route decision) still gets
-  its full predictions written in §2 **before** it is built. `test_game.gd` 25/25.
-- **2026-09-22** — **Manual playtest passed** (human): postman reads correctly
-  facing L/R, standing, and jumping; postbox reads correctly at the finish;
-  controls unchanged. Player: _"all good, manually tested everything works."_
-  Recorded in TEST-REPORT.md. Milestone committed to branch `working`.
+- **2026-09-22** — Postman character + postbox finish predicted, built, tested
+  (34/34 + human playtest), shipped to `main` (8672fe3). _(Full postman predictions
+  are in git history at 8672fe3.)_
+- **2026-09-23** — **Pivoted to "Firefighter Rescue."** Character → firefighter
+  (Iteration 3), spikes → flames, level → burning-building climb with rescue + gated
+  window + countdown timer. Reasons: a built-in player decision and a natural moved
+  finish. Postman retained in history; not deleted. This brief rewritten for the new
+  direction *before* the firefighter code is written.
+- **2026-09-23** — Inc-3 playtest → fire placement + window-gating revisions planned;
+  see TEST-REPORT / FRICTIONAL. (Predictions above unchanged; §4 to be refined once decided.)
+- **2026-09-23** — §4 refined with the finalized Inc-4 design (touch-to-rescue,
+  reach-unlocked-exit=win, fire-on-platforms, clarity) *before* the code; then Inc 4
+  built + tested (37/37, both rescued, gating verified). See TEST-REPORT / FRICTIONAL.

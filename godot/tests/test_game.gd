@@ -128,11 +128,45 @@ func run() -> void:
 	await fresh()
 	var route = Route.new()
 	var route_ticks := 0
-	while game.state == Game.State.PLAYING and route_ticks < 900:
+	var climb_flames := [Rect2(1078,268,14,14), Rect2(1372,196,14,14), Rect2(1512,160,14,14)]  # on P1, P3, P4 (stick up above surface)
+	var min_clears := [999.0, 999.0, 999.0]
+	while game.state == Game.State.PLAYING and route_ticks < 2000:
 		route.step(game.player)
 		await steps(1)
 		route_ticks += 1
-	check("complete-real-route", game.state == Game.State.COMPLETE and game.deaths == 0, {"state":game.state,"deaths":game.deaths,"ticks":route_ticks,"position":str(game.player.position),"jump_marks_used":route.next_jump})
+		if not game.player.is_on_floor():
+			var px: float = game.player.position.x
+			var py: float = game.player.position.y  # feet
+			for fi in range(climb_flames.size()):
+				var fl: Rect2 = climb_flames[fi]
+				if px + 9.0 >= fl.position.x and px - 9.0 <= fl.end.x:
+					min_clears[fi] = minf(min_clears[fi], fl.position.y - py)
+	check("complete-real-route", game.state == Game.State.COMPLETE and game.deaths == 0 and game.rescued_count == game.survivors.size(), {"state":game.state,"deaths":game.deaths,"ticks":route_ticks,"rescued":game.rescued_count,"phase":route.phase,"returned":route.returned})
+	check("extension-climb-and-detour", route.returned and route.phase >= 3 and game.rescued_count == 2, {"returned":route.returned,"phase":route.phase,"rescued":game.rescued_count})
+	check("flame-clearance-positive", min_clears[0] > 0.0 and min_clears[1] > 0.0 and min_clears[2] > 0.0, {"P1":min_clears[0],"P3":min_clears[1],"P4":min_clears[2]})
+	# Gating: reaching the exit without both rescues must NOT complete.
+	await fresh()
+	game.player.position = Vector2(1573, 138)
+	await steps(4)
+	check("exit-locked-without-rescues", game.state == Game.State.PLAYING and game.rescued_count == 0, {"state":game.state,"rescued":game.rescued_count})
+	# A rescued survivor is fully removed from the path (no lingering trigger / HELP).
+	await fresh()
+	game.player.position = Vector2(1185, 246)  # stand on the person
+	await steps(4)
+	check("survivor-removed-on-rescue", game.survivors[0].rescued and not game.survivors[0].area.monitoring and game.player.bag_types.size() >= 1, {"person_rescued":game.survivors[0].rescued, "still_monitoring":game.survivors[0].area.monitoring, "bag":game.player.bag_types.size()})
+	# Platform flames must kill a player standing/walking in them (not only clear an over-jump).
+	await fresh()
+	game.player.position = Vector2(1085, 282)  # standing in the P1 flame
+	await steps(4)
+	check("walk-into-flame-P1", game.state == Game.State.DYING, {"state":game.state})
+	await fresh()
+	game.player.position = Vector2(1379, 210)  # standing in the P3 flame
+	await steps(4)
+	check("walk-into-flame-P3", game.state == Game.State.DYING, {"state":game.state})
+	await fresh()
+	game.player.position = Vector2(1519, 174)  # standing in the P4 flame
+	await steps(4)
+	check("walk-into-flame-P4", game.state == Game.State.DYING, {"state":game.state})
 	game.start_session()
 	game.start_session()
 	check("replay-idempotent", game.state == Game.State.PLAYING and game.deaths == 0 and game.player.jumps == 0, {"state":game.state,"deaths":game.deaths,"jumps":game.player.jumps})
