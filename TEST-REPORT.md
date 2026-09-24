@@ -22,6 +22,17 @@
 
 ---
 
+## Current build at a glance (latest = the submitted game)
+**Firefighter Rescue — two buildings + the hose.** Latest automated result: **50/50** —
+`test_game.gd` **41** + `test_keyboard.gd` **9** on Godot 4.7.2; the scripted route runs
+**0 deaths** to the B2 rooftop with **both rescued** (~17.4 s); countdown timer **40 s**.
+The sections below are kept **chronologically** and results are **retained** per build — so
+earlier per-increment numbers (e.g. the single-building **44/44**, the 30 s timer) are
+**history**, and the newest sections at the bottom ("two-building" → "hose" → "progressive
+extinguish" → "readability") describe the current game.
+
+---
+
 ## Baseline — starter, before any changes (2026-09-22)
 Source revision: **9387542** (starter "First Steps").
 - **System:** `test_game.gd` **25/25 PASS**, `test_keyboard.gd` **9/9 PASS** (34 total).

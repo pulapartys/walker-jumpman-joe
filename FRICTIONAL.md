@@ -131,6 +131,84 @@
 - **Human/AI:** I found the feel issue by playing and made the call; the AI applied the
   one-value change and re-ran the checks.
 
+## 2026-09-24 · Two-building redesign (document-first, then build)
+- **Tried / decided:** the single-building climb worked but felt like one idea. I decided to
+  redesign the level into **two burning buildings** — rescue a person in Building 1, cross a
+  **burning street** (a ground-level gap with a street flame), climb Building 2 to rescue the
+  dog, and escape off the B2 rooftop. I asked for it to be **documented first** (CHANGE-BRIEF
+  revision + predicted failure cases) before any code.
+- **What happened / checked:** proposed platform coordinates with a reachability table, built
+  it, then measured the **real** clearances on the engine. Two things the build caught that
+  the paper model missed: (1) the descent from B1 landed near B1-ground's right edge, so the
+  street jump took off right at the street flame (measured **−8.6 px** — a clip); (2) an early
+  flame-vs-takeoff overlap. Fixed by moving the street flame deeper into the gap and giving the
+  takeoff a runway → **street clearance +17–21 px**, route **0 deaths** to the B2 roof with
+  both rescued.
+- **Human/AI:** I set the two-building direction and the document-first gate and read the
+  reachability proposal; the AI drew the layout, measured real clearances, and iterated on the
+  street/flame geometry until the route survived. I re-played it after.
+- **Traceable to:** PR #3 (two-building), `first_steps.json`, `route_driver.gd`, TEST-REPORT
+  "two-building" section, WORK-PROGRESS Entry 13.
+
+## 2026-09-24 · Inspect-and-revise cycle #5 (the hose — two reviewer flags)
+- **Tried:** proposed a new mechanic — an **extinguishable blocking fire** (new input `W`)
+  between the firefighter and the person — and posted exact numbers (fire rect, 50 px range,
+  4 s duration, W wiring, tests) for review **before** building.
+- **What the review caught (two real flaws):**
+  - **Flag 1 — die-on-landing.** With the first placement the firefighter landed at ~1194
+    still moving at 160 px/s and slid ~6.7 px, ending its collider at ~1209.7 with the fire at
+    1210 — a **0.3 px** margin. You'd die just from *landing*, having done nothing wrong.
+  - **Flag 2 — a bot-tuned timer.** I'd justified the timer with the *scripted route's* ~17 s.
+    A human on a two-building level with a climb, a street crossing, a second climb, a 4 s
+    hose, and normal fumbling takes far longer — a limit tuned to the bot is unfair.
+- **Checked / changed:** repositioned so the fire visibly **blocks a visible person** (layout:
+  **landing runway → fire → person**) with a verified **~40 px** clear runway (no slide-in);
+  confirmed 0 deaths through the landing on the real engine. Set the timer **generously (80 s
+  first)** and then tuned it **down from an actual human run to 40 s** — never from the bot.
+- **Human/AI:** the reviewer (human) rejected the unfair landing math and the bot-tuned timer
+  and required a *visible* trapped person; the AI recomputed the landing physics, repositioned
+  fire/person, shifted Building 2 to keep reachability, and re-verified.
+- **Traceable to:** PR #4, CHANGE-BRIEF hose section + revisions log, TEST-REPORT hose section,
+  WORK-PROGRESS Entry 14.
+
+## 2026-09-24 · Inspect-and-revise cycle #6 (progressive extinguish — matched collision)
+- **Observed / decided:** an instant on/off fire felt flat. I asked for a **progressive**
+  extinguish — full → **half height at t=2 s** → gone at **t=4 s** — with the **collision
+  matching the visual at each stage**, but the **base staying lethal + blocking until fully
+  out** (so you can't slip through the half-size fire, and the person is unreachable until
+  t=4 s). Timer to 40 s.
+- **Checked:** made **one** `fire_height()` drive *both* the drawing and the kill-zone, so they
+  shrink together by construction. Added `half-size-fire-still-kills` — at t=2 s the fire is
+  half height (`extinguish_ticks=120`) yet stepping in still → DYING with the person not
+  rescued. `hose-extinguishes-fire` confirms still-lit at 3.5 s, out by ~4 s. **50/50**, no
+  assertions weakened.
+- **Human/AI:** I specified the staged behavior + the "base still blocks" rule and the tests I
+  wanted; the AI implemented the shared height function, wired the collision, and added the
+  half-size check.
+- **Traceable to:** PR #4, `session.gd` `fire_height()`, `test_game.gd`
+  (`half-size-fire-still-kills`), TEST-REPORT hose section.
+
+## 2026-09-24 · Inspect-and-revise cycle #7 (readability / figures — from screenshots)
+- **Observed (playing + screenshots):** the trapped **person read as a blob** and the **dog as
+  a lump**, both camouflaged by solid-yellow window boxes; the dark firefighter blended into
+  dark ledges; and the hose prompt + the "01 / TO THE BUILDINGS" label crowded the HELP! bubble
+  and overflowed behind the start-menu card.
+- **Decided / changed (drawing only):** redrew the **person** as a clear **waving human**
+  (head + face, torso, raised arm, legs) and the **dog** with ears/snout/tail/four legs (bright
+  fills + dark outlines); turned the rescue windows into **dark openings** so the figures pop;
+  lightened facades to **very light brown** and **halved the windows** to **beige** (so the only
+  orange left is the real fire); enlarged the HELP! bubbles with pointer tails; added a
+  firefighter **rim light**; lifted the hose prompt + added a `W: hose` control hint; and hid the
+  intro world-labels behind the menu card (fixed the overflow). Verified each in rendered
+  screenshots (`evidence/screens/read-*.png`).
+- **Human/AI:** I played, judged the readability, and gave specific art direction over several
+  rounds (lighter buildings, fewer/beige windows, a clearly-a-person + clearly-a-dog, fix the
+  overflow); the AI redrew the figures/facades and re-rendered for me to check. No
+  collision/tuning/position changed; **50/50** held throughout.
+- **Traceable to:** PR #4, `session.gd` `_draw()`, `player.gd` `_draw()`, `hud.gd`,
+  `evidence/screens/read-b1-person.png` / `read-b2-dog.png` / `read-menu.png`, WORK-PROGRESS
+  Entry 15.
+
 ---
 
 ## Traceability & the four Frictional elements
@@ -146,9 +224,15 @@
 - **Traceability to commits / tests / observations:**
   - Postman milestone → commit **`8672fe3`** (PR #1, on `main`).
   - Firefighter Increments 1–4 → commit **`ccaa31b`** (PR #2, merge `1dfac3f`).
-  - Increment 5 (timer) → next commit on `working`.
-  - Tests (all in `godot/tests/test_game.gd`): `flame-clearance-positive`,
-    `extension-climb-and-detour`, `exit-locked-without-rescues`,
-    `survivor-removed-on-rescue`, `walk-into-flame-P1/P3/P4`, `route-beats-timer`,
-    `timer-expiry-fails`, `timer-resets-on-retry`.
-  - Cross-refs: TEST-REPORT.md (per increment + consolidated), WORK-PROGRESS.md (Entries 7–12).
+  - Increment 5 (timer) + evidence cleanup → PR #3 area (on `main`).
+  - **Two-building redesign** → PR #3; **hose + progressive extinguish + readability pass** →
+    PR #4 (merge **`c18abe0`**). The single-building climb above (P1–P5) was **superseded** by
+    the two-building layout — those entries are retained as honest history.
+  - Tests (in `godot/tests/test_game.gd`): `complete-real-route`, `flame-clearance-positive`,
+    `reached-b2-roof-both-rescued`, `exit-locked-without-rescues`, `survivor-removed-on-rescue`,
+    `walk-into-flame-B1L1/B2L1/B2L2`, `route-beats-timer` (40 s), `timer-expiry-fails`,
+    `timer-resets-on-retry`, and the hose suite (`hose-extinguishes-fire`,
+    `hose-out-of-range-noop`, `blocking-fire-kills-on-touch`, `half-size-fire-still-kills`,
+    `person-rescue-blocked-until-extinguished`, `extinguish-resets-on-retry`). **50 total.**
+  - Cross-refs: TEST-REPORT.md (per increment + current-build summary), WORK-PROGRESS.md
+    (Entries 7–15). **Final timer = 40 s** (cycle #4's 30 s was later re-tuned; see cycles #5–6).
