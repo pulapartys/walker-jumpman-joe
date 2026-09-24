@@ -191,6 +191,11 @@ targeting). A prompt **"Press W to hose the fire"** shows when in range. Everyth
 retry** (fire back, water state cleared). The countdown **timer is bumped 30 → 35 s** so the
 ~4 s hose stays fair.
 
+**Decision point (why this is a choice, not just a wall):** the hose forces a real commitment
+under the countdown — the lit fire **can't be run past and the person can't be rescued through
+it**, so the player must **decide to spend ~4 s at the window hosing it** (losing clock time) as
+the *only* way to reach the trapped person. It's a deliberate cost/benefit beat, not scenery.
+
 **Stays unchanged:** movement/jump tuning (`tuning.gd`), the 18×28 collider, the **existing
 controls** (W is new/additive), and the pause/retry/completion flow.
 
@@ -205,6 +210,21 @@ controls** (W is new/additive), and the pause/retry/completion flow.
    `extinguish-resets-on-retry` (extinguish → die → retry → fire is back, not extinguished).
 3. **(bonus) W disturbs existing controls.** → W is a *new* action; existing bindings are
    untouched → the 44 automated checks still pass.
+
+## Decisions the level asks the player to make
+The extension is built around real choices under a countdown, not empty floor (this is the
+"clear player decision or challenge" the assignment asks for):
+1. **Fire-vs-safe on each climb** — most jumps put a stick-up flame in the arc: risk a tighter
+   hop over fire, or take the safer, slower line (see §3's flame decision).
+2. **The hose — a timed commitment.** A lit fire blocks the trapped person's window and can't be
+   run past or rescued through. The player must **decide to spend ~4 s hosing it** (losing clock
+   time) as the *only* path to the person — a cost/benefit beat against the timer.
+3. **The burning street** — a committed ground-level jump over fire between the two buildings;
+   mis-timing it is a death + retry.
+4. **Rescue BOTH survivors, not just the easy one.** The rooftop fire escape is **gated — it does
+   NOT unlock until the person AND the dog are saved.** The dog is off in Building 2, so the
+   player can't rush to the exit; they must choose to make the second climb and complete the
+   whole route to win. (Touching a locked exit flashes "Rescue everyone first!".)
 
 ## Revisions log
 - **2026-09-22** — Postman character + postbox finish predicted, built, tested
@@ -239,3 +259,9 @@ controls** (W is new/additive), and the pause/retry/completion flow.
   until fully out (walking into the half fire still kills; person unreachable until t=4 s);
   water lingers ~1 s. Timer set to **40 s** (human-playtested fair). **50/50 automated** (added
   `half-size-fire-still-kills`); no predictions rewritten.
+- **2026-09-24** — **Readability / figure pass (drawing only).** Facades → very light brown
+  with half as many **beige** windows; the **person** redrawn as a clear waving human and the
+  **dog** with ears/snout/tail/legs; rescue windows → **dark openings**; bigger HELP! bubbles;
+  firefighter **rim light**; `W: hose` control hint; intro world-labels hidden behind the menu
+  card (overflow fix). No collision/trigger/tuning/control/position change; **50/50** unchanged.
+  A visual refinement logged for the record (not a mechanics prediction).

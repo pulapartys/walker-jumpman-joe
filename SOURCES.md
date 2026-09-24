@@ -13,7 +13,9 @@
   "First Steps" playable slice (Godot 4.7.2 / typed GDScript). Our project is an
   **extension** of that starter: we kept its control/retry engine, its state machine,
   its collider and movement tuning, and its original ground route (reskinned), and
-  built the firefighter theme, level extension, rescue mechanic, and timer on top.
+  built the firefighter theme, the two-building level (climb → hose → rescue → burning
+  street → second climb → rooftop escape), the rescue + **hose (extinguishable fire)**
+  mechanics, the countdown timer, and a readability/figure repaint on top.
 - The starter's original design docs (`GDD.md`, `GAME-BRIEF.md`, `LEVEL-DESIGN.md`,
   `BUILD-REPORT.md`, etc.) remain in the repo as the starter's package.
 
@@ -71,9 +73,16 @@ the direction are hers.
   for the assignment window — kept it as a documented "someday" vision.
 - **Modified** the character choice twice (chick → postman → firefighter) before coding.
 - **Rejected** the AI's hand-computed reachability numbers, requiring a real-engine
-  measurement — which then caught a 0.07 px flame graze.
+  measurement — which then caught a 0.07 px flame graze (single-building) and a −8.6 px
+  street-jump clip (two-building).
+- **Rejected** the hose's first fire placement (a 0.3 px die-on-landing margin) and its
+  **bot-tuned timer**, and required a *visible* trapped person behind the fire; directed the
+  fix to a ~40 px safe landing runway and a **human-tuned 40 s** limit.
+- **Directed** the readability pass over several rounds from playing + screenshots (lighter
+  buildings, fewer/beige windows, a clearly-a-person + clearly-a-dog, fix the text overflow).
 - **Accepted** the AI's diagnoses (mid-jump finish → `is_on_floor()`; stale visuals →
-  `queue_redraw()`) after the fixes were tested.
+  `queue_redraw()`; one shared `fire_height()` so the hose visual and kill-zone match) after
+  the fixes were tested.
 
 ## "I can explain it" — where the reasoning lives
 - **Predictions before code:** `CHANGE-BRIEF.md`
