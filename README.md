@@ -1,43 +1,73 @@
-# walker-jumpman — First Steps
+# walker-jumpman-joe — Firefighter Rescue
 
-**Playable source prototype · September 10, 2026 · Godot 4.7.2 / GDScript**
+**A 2D platformer built by extending the Walker Jumpman "First Steps" starter · Godot 4.7.2 / typed GDScript**
 
-Standalone game repository: [nikbearbrown/walker-jumpman](https://github.com/nikbearbrown/walker-jumpman). This checkout contains only this game's source, design package, and test evidence—not the Walker toolkit, Brutalist, or video renders.
+You're a **firefighter**: race a countdown up a burning building, **rescue the trapped
+person and dog** into your bag, and **jump out the fire escape** before the fire — or
+the clock — wins. This is **Assignment 1 (Extend Walker Jumpman)** for CSYE 7270.
 
-Clone with `git clone https://github.com/nikbearbrown/walker-jumpman.git`, then import `walker-jumpman/godot/project.godot` in the regular Godot editor. No .NET runtime or external assets are required. On macOS, the launcher below also works when Godot is installed in Applications; on other platforms, use the editor or `godot --path godot` from the cloned folder.
+- **Author:** Sreeja Pulaparty (pulaparty.s@northeastern.edu)
+- **Starter credit:** extended from **[nikbearbrown/walker-jumpman](https://github.com/nikbearbrown/walker-jumpman)** (the "First Steps" slice). This repo keeps the starter's control/retry engine, collider, and movement tuning, and builds the firefighter theme on top.
+- **Engine:** Godot **4.7.2.stable.official.ed1daf0bf** (Compatibility / GL renderer), macOS. No .NET runtime, no external assets.
+- **Final film:** _(link TBD — stored in course media; MP4 kept out of GitHub)_
 
-Double-click [walker-jumpman.command](walker-jumpman.command) to play. Press **Enter** to start; **A/D or arrows** to move, **Space** to jump, **R** to retry, and **Escape/P** to pause. Reach the flag. Retries are unlimited.
+## Run it
+1. Install **Godot 4.7.2** (Compatibility build) and open **`godot/project.godot`** in the editor.
+2. Press **▶ Play** (top-right). Or from the repo root: `godot --path godot`.
+   - The `walker-jumpman.command` launcher expects Godot in `/Applications`; if yours is elsewhere, use the editor or the CLI above.
 
-![The actual First Steps game, captured during a scripted jump](evidence/screens/03-jump.png)
+## Controls
+| Action | Keys |
+|---|---|
+| Move | **A / D** or **← / →** |
+| Jump (one fixed-height jump) | **Space** |
+| Retry attempt | **R** |
+| Pause / resume | **Esc** or **P** |
+| Start / confirm | **Enter** |
+| Back to menu | **M** (paused or after finishing) |
 
-This simple level has two steps, two gaps, one spike hazard, and a finish. It is the control/retry slice, not the full three-zone/cherry design below. See [build results and limitations](BUILD-REPORT.md). To edit, import [godot/project.godot](godot/project.godot) into Godot.
+**Goal:** climb the building, **rescue the person and the dog** (walk into them), then
+reach the **fire escape** — it only opens once **both** are saved. Touch fire or fall =
+death + instant retry. Run out of time = the attempt fails.
 
-The first Walker example is a compact 2D platformer built around readable jumps, optional cherries and quick retries. Every new game project uses the `walker-` prefix. The original `jumping-man-godot` recovery collection remains separate and unchanged; it is not included or required here. Historical design references to sibling recovery files refer to the author's local source collection, not files shipped in this repository.
+## What I changed (vs. the starter)
+- **Character → firefighter** (`features/player/player.gd` `_draw()`): red helmet, turnout
+  coat + reflective stripe, air tank, rescue bag. Rescued survivors ride in the bag as
+  visible heads. Original geometric drawing; **collider and tuning unchanged**.
+- **Spikes → fire** (`game/session.gd`): flames as stick-up hazards that kill on touch.
+- **Extended level** (`levels/first_steps.json` + `session.gd`): the original approach is
+  kept (reskinned, still a usable route), then extended into a **5-platform climb** with a
+  **fire-escape window** finish. A **dog on a risk/reward detour ledge** off the top floor.
+- **Rescue mechanic + gated exit:** touch to rescue (person + dog); the window is **gated**
+  on rescuing both (locked/unlocked visuals, "SAVED!" popup, HUD objective, heads-in-bag).
+- **Countdown timer:** a 30 s per-level limit (tuned down from 50 s after playtesting); the HUD counts down (red under 10 s); hitting
+  0 fails the attempt and resets.
+- Preserved: controls, movement/jump tuning, collision, and the pause/retry/completion flow.
 
-## Read in this order
+## Tests
+44 automated checks on the real engine (mechanics + real-keyboard input):
+```bash
+godot --headless --path godot --script res://tests/test_game.gd      # 35 checks
+godot --headless --path godot --script res://tests/test_keyboard.gd  #  9 checks
+```
+Exit code 0 = all pass. Details + human playtest: **[TEST-REPORT.md](TEST-REPORT.md)**.
 
-1. [Game brief](GAME-BRIEF.md) — the short player-facing idea and proposed scope.
-2. [Detailed GDD](GDD.md) — sixteen design sections, source evidence, requirements and twenty-two acceptance cases.
-3. [Level design](LEVEL-DESIGN.md) — the three-zone course and its untested geometry.
-4. [Production plan](PRODUCTION-PLAN.md) — twenty-two dependency-ordered tasks across six phases, plus four deferred tasks.
-5. [Playtest plan](PLAYTEST-PLAN.md) — mechanical tests, formative human sessions, evidence and revision rules.
-6. [Asset plan](ASSET-PLAN.md) — original greybox requirements and the provenance boundary.
-7. [Design status](DESIGN-STATUS.json) — machine-readable revision, decisions, pending approvals and honest runtime state.
+## Known limitations
+- **One level** — the multi-level "someday" vision and a Level 2 are documented but **not
+  built** (out of scope for this window).
+- **No vertical camera** — the climb is designed to fit the existing X-only camera.
+- **P3's flame jump** clears by ~10 px (the tightest margin) — jumpable but precise.
+- The fire escape completes on a **grounded touch**, not a literal mid-air jump-through
+  (a documented design choice to keep the finish fair).
+- No audio; source release only (no exported build). The film is delivered separately.
 
-![Candidate walker-jumpman course map; not a gameplay screenshot](design/level-overview.png)
+## Project docs
+- **[CHANGE-BRIEF.md](CHANGE-BRIEF.md)** — predictions written *before* each build step (+ honest revisions log).
+- **[TEST-REPORT.md](TEST-REPORT.md)** — automated results + human playtests per increment + the consolidated final pass.
+- **[FRICTIONAL.md](FRICTIONAL.md)** — the honest log (3 inspect-and-revise cycles, human vs. AI).
+- **[SOURCES.md](SOURCES.md)** — starter/asset/tool credit + the human/AI contribution split.
+- **[WORK-PROGRESS.md](WORK-PROGRESS.md)** — a code-change log (what changed and why).
+- **[CHARACTER-DESIGN.md](CHARACTER-DESIGN.md)** — character design reasoning and iterations.
+- **[SUBMISSION.md](SUBMISSION.md)** — the Canvas submission metadata block.
 
-[Design consistency review](DESIGN-REVIEW.md) · [Editable SVG map](design/level-overview.svg)
-
-[Level coordinate data](design/level-01.json) drives this candidate blockout. Counts and geometry can be checked without Godot. Jump reachability, zero-cherry/all-cherry routing, camera behavior and enjoyment have not been tested.
-
-## Proposed defaults ready for review
-
-Godot 4 with typed GDScript, Compatibility rendering, one three-zone level, twenty optional cherries, one fixed-height jump with small forgiveness windows, hazards, quick retries, keyboard controls and a locally tested Web export. No paid services. No moving-platform dependency in the MVP.
-
-The tested engine is Godot 4.7.2.stable.official.ed1daf0bf. Zelda's reusable prompt and command/workflow specification belong to the separate Walker toolkit and are not dependencies of this game.
-
-## Current boundary
-
-The full design is still a draft. Bear subsequently authorized **“Build a simple level for walker-jumpman.”** The first slice is implemented and machine-tested; full-design approvals, human playtesting, cherries/settings, and the Web export remain pending. This is a source-code release, not a hosted game or downloadable executable. The build report and test receipts preserve the earlier local-build history.
-
-Next: play this small control/retry loop before expanding the course. The human owns intent, scope, play-feel judgments, and release decisions; AI implements and checks authorized work. The original `/Users/bear/walker-jumpman` stays untouched.
+_Sreeja's game and Sreeja's ideas — she decides what to build and how to modify it, and manually plays and retries after every change; the AI is a supporting tool that implements and checks her authorized changes._
