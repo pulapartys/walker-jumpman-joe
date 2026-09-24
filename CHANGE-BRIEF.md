@@ -123,16 +123,20 @@ report real clearances, fix geometry (not the test).
 
 ## 5. Countdown timer (predicted)
 
-- Change the HUD timer from counting **up** to counting **down** from a per-level
-  limit (~45–60 s for Level 1, tunable).
-- Reaching **0 = attempt fails = retry** (whole attempt resets, timer back to full).
-- An **added fail reason only** — must not change controls, tuning, collider,
-  pause, or completion flow. Tuned so a human **and** the automated route finish in
-  time.
+_Finalized for Increment 5 (predicted before the code):_
 
-**Failure cases + checks:** (1) *tuned too tight* → the auto route or a human can't
-finish → run the route test within the limit; adjust. (2) *timer doesn't reset on
-retry* → die, retry, confirm it returns to full.
+- **`time_limit` per level in the JSON** (Level 1 = **50 s** — the scripted route
+  finishes in ~12.5 s, leaving comfortable human margin). The HUD timer counts
+  **down** from it and turns **red under 10 s**.
+- Reaching **0 = attempt fails = retry** (death reason "Out of time!"; the whole
+  attempt resets and the timer returns to full — `elapsed` already resets on retry).
+- An **added fail reason only** — controls, tuning, collider, pause (timer freezes
+  when paused), and the completion flow are unchanged.
+
+**Failure cases + checks:** (1) *tuned too tight* → the auto route can't finish →
+`route-beats-timer` asserts the route completes with time to spare; (2) *timer
+doesn't reset on retry* → `timer-resets-on-retry` after a timeout; (3) *timeout
+doesn't fail* → `timer-expiry-fails` asserts DYING + "Out of time!".
 
 ---
 
@@ -142,6 +146,36 @@ completion **flow**. The gated window and the timer are documented **additions**
 (a new win *condition* and a new fail *reason*), not changes to the existing feel.
 
 ---
+
+## Level redesign revision — two burning buildings (2026-09-24, predicted before rebuild)
+
+_Added revision. The original single-climb level prediction (§3) is **retained** above,
+not rewritten._
+
+**New design:** approach (original ground, kept) → **Building 1** (climb to the
+**person's window**) → **descent** (drop back to B1's wide base) → **burning street**
+(a ground-level gap with fire, crossed in one jump — no mid-air platform) → **Building 2**
+(climb to the **dog's window**) → **Building 2 rooftop** = the gated exit ("JUMP OUT" once
+both are rescued). **Reuses every mechanic unchanged** (touch-to-rescue, gated exit,
+stick-up lethal fire, countdown timer) — a re-layout + re-draw, no new systems. Coordinates
+and the reachability table were posted and approved before this rebuild.
+
+**Stays unchanged:** movement/jump tuning (`tuning.gd`), the 18×28 collider, and the
+pause/retry/completion flow. Two decorative building facades are drawn *behind* the ledges
+(no collision); the ledges/windows/exit are drawn from the level data
+(`solids`/`survivors`/`finish`) so the visuals line up with the physics by construction.
+
+**Predicted failure cases + how I'll check them:**
+1. **The descent drop lands in the burning street** — falling off the person's window
+   drifts ~65 px right during the fall. → B1's base is made **wide** (x1000–1400) to catch
+   it; checked by `complete-real-route` (0 deaths through the descent) and by confirming the
+   player is grounded on B1-ground after the drop, not falling into the street.
+2. **A platform flame is non-lethal or non-jumpable** (placed inside the platform, or too
+   tall/tight). → `walk-into-flame-*` must assert **DYING** (kills on walk-in) and
+   `flame-clearance-positive` must report a **positive real-engine margin** on the route —
+   the same build-and-measure gate as the last level.
+3. **The street jump is unreachable / a mid-air building leap.** → the table keeps it a
+   **flat ~85 px** single jump (≤ ~106 max); `complete-real-route` crosses it with 0 deaths.
 
 ## Revisions log
 - **2026-09-22** — Postman character + postbox finish predicted, built, tested
@@ -157,3 +191,11 @@ completion **flow**. The gated window and the timer are documented **additions**
 - **2026-09-23** — §4 refined with the finalized Inc-4 design (touch-to-rescue,
   reach-unlocked-exit=win, fire-on-platforms, clarity) *before* the code; then Inc 4
   built + tested (37/37, both rescued, gating verified). See TEST-REPORT / FRICTIONAL.
+- **2026-09-23** — §5 finalized (50 s limit, HUD counts down + red under 10 s, "Out of
+  time!" fail) *before* coding Increment 5.
+- **2026-09-24** — Inc-5 playtest → `time_limit` **50 → 30 s** (finished under 35 s every
+  run; wanted real pressure). §5's 50 s prediction retained; the route still beats the timer.
+  See FRICTIONAL cycle #4.
+- **2026-09-24** — Level redesigned to **two burning buildings** (person in B1, dog in B2,
+  a burning street between, B2 rooftop = gated exit). Recorded as the revision section above;
+  §3's single-climb prediction retained. Build + runtime verification next.

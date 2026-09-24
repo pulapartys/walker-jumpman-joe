@@ -156,10 +156,15 @@ func _physics_process(delta: float) -> void:
 			restart_attempt()
 	elif state == State.PLAYING:
 		elapsed += delta
-		var fatal := player.position.y > float(level.fall_y)
-		death_reason = "You fell." if fatal else "The fire got you."
+		var fell := player.position.y > float(level.fall_y)
+		var timed_out := elapsed >= float(level.time_limit)
+		var hit_fire := false
 		for hazard in hazard_areas:
-			fatal = fatal or hazard.overlaps_body(player)
+			if hazard.overlaps_body(player):
+				hit_fire = true
+		var fatal := fell or timed_out or hit_fire
+		if fatal:
+			death_reason = "Out of time!" if timed_out else ("You fell." if fell else "The fire got you.")
 		# Touch to rescue: overlapping a survivor saves them.
 		for s in survivors:
 			if not s.rescued and s.area.overlaps_body(player):
@@ -225,6 +230,16 @@ func _draw() -> void:
 		draw_line(Vector2(0, y), Vector2(lw, y), Color("e7e5df"), 1)
 	for x in range(100, lw, 340):
 		draw_colored_polygon(PackedVector2Array([Vector2(x-90,320),Vector2(x+50,180),Vector2(x+190,320)]), Color("e4e8e3"))
+	# Burning buildings — decorative facades drawn BEHIND the ledges (no collision).
+	for b in level.get("buildings", []):
+		var bl := Rect2(b[0], b[1], b[2], b[3])
+		draw_rect(bl, Color("3a3f4a"))                                         # dark wall
+		draw_rect(Rect2(bl.position, Vector2(bl.size.x, 5)), Color("2a2e37"))  # roof cap
+		draw_rect(bl, Color(0.88, 0.35, 0.12, 0.13))                           # fire glow over the wall
+		for wx in range(int(bl.position.x) + 18, int(bl.end.x) - 14, 42):
+			for wy in range(int(bl.position.y) + 16, int(bl.end.y) - 24, 34):
+				draw_rect(Rect2(wx, wy, 13, 17), Color("23262e"))
+				draw_rect(Rect2(wx + 2, wy + 2, 9, 13), Color("d0641f") if (wx * 3 + wy) % 7 < 3 else Color("30343d"))
 	for entry in level.solids:
 		var r := Rect2(entry[0], entry[1], entry[2], entry[3])
 		draw_rect(r, ink)
@@ -282,6 +297,9 @@ func _draw() -> void:
 			continue
 		var sx: float = s.x
 		var sy: float = s.y
+		# a fire-lit rescue window the survivor is trapped at (lines up with the trigger)
+		draw_rect(Rect2(sx - 12.0, sy - 30.0, 24.0, 30.0), ink)
+		draw_rect(Rect2(sx - 10.0, sy - 28.0, 20.0, 28.0), Color("e39a3f"))
 		if s.type == "dog":
 			draw_rect(Rect2(sx - 6.0, sy - 7.0, 12.0, 6.0), Color("8a5a2b"))
 			draw_circle(Vector2(sx + 6.0, sy - 9.0), 3.5, Color("8a5a2b"))
@@ -294,6 +312,7 @@ func _draw() -> void:
 			draw_rect(Rect2(sx + 1.0, sy - 4.0, 3.0, 4.0), Color("25354a"))
 		draw_rect(Rect2(sx - 12.0, sy - 40.0, 26.0, 13.0), Color("fff2b0"))
 		draw_string(font, Vector2(sx - 9.0, sy - 30.0), "HELP!", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color("a23e36"))
-	draw_string(font, Vector2(33, 251), "01 / GET TO THE BUILDING", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
-	draw_string(font, Vector2(33, 273), "Save the person + dog. Then out the fire escape.", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ink)
-	draw_string(font, Vector2(1000, 232), "02 / CLIMB & RESCUE", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
+	draw_string(font, Vector2(33, 251), "01 / TO THE BUILDINGS", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
+	draw_string(font, Vector2(33, 273), "Save the person + dog, then out the B2 roof.", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ink)
+	draw_string(font, Vector2(1010, 200), "B1 / SAVE THE PERSON", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, ink)
+	draw_string(font, Vector2(1560, 138), "B2 / SAVE THE DOG -> ROOF", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, ink)

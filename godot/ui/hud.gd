@@ -25,7 +25,9 @@ func _draw() -> void:
 	draw_rect(Rect2(22,63,596*progress,3), Color("287c68"))
 	draw_rect(Rect2(0,335,640,25), Color("f6f3ec"))
 	text_at("No lives. Just get them out.", Vector2(22,353), 13)
-	text_at("RETRIES %02d     %04.1fs" % [game.deaths, game.elapsed], Vector2(440,353), 13)
+	var remaining: float = maxf(0.0, float(game.level.time_limit) - game.elapsed)
+	var tcol := Color("a23e36") if remaining < 10.0 else INK
+	text_at("RETRIES %02d     TIME %04.1fs" % [game.deaths, remaining], Vector2(428,353), 13, tcol)
 	text_at("SAVE:", Vector2(206,353), 12)
 	var ox := 246.0
 	for s in game.survivors:

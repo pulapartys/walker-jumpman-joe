@@ -10,6 +10,26 @@
 
 ---
 
+## 2026-09-22 → 09-23 · Project arc & how we worked (context)
+- **Tried / expected:** as a first-time Godot user, I started by getting the starter to
+  run and pass its tests, then explored what to build. I expected the character to be the
+  hard part; it turned out to be the easy, isolated one, and the **level reachability +
+  rendering** were where the real friction lived.
+- **What changed:** the concept moved **chick → postman → firefighter** *before* any level
+  code — I'd rather change direction on paper than in code. We shipped the postman first
+  (commit `8672fe3`, PR #1), then pivoted to the firefighter (PR #2) because it gave a
+  built-in decision and a natural moved finish.
+- **How we worked (human/AI):** these are **my ideas** — I used the AI (Claude Code) as a
+  **supporting tool** to build them. I read through all the docs, **decided what code to add
+  and how to modify the game** at each step, and after **every change I manually played and
+  retried the game** to see what worked, then came up with the next improvement, rejection,
+  or "that didn't work." The AI implemented my decisions, ran the automated checks, and
+  helped diagnose what I found; I accepted fixes only after testing them, and I rejected an
+  over-scoped plan (Level 2 + vertical camera).
+- **Learned:** automated tests verify *state/data, not pixels* — three of my most useful
+  catches (flames not lethal, no rescue feedback, stale redraw) came from **playing**, not
+  from the green test bar.
+
 ## 2026-09-23 · Reachability verification friction (Increment 3, before playtest)
 - **Tried:** proposed the climb layout with a *hand-computed* jump model and "safe"
   flame clearances (I claimed +11 / +14.7 px), plus a dog pocket tucked under the
@@ -89,3 +109,46 @@
   still completes (0 deaths, both rescued); real jump clearances to the taller flames:
   P1 14.1 / P3 10.1 / P4 17.8 px. **41/41 automated, no weakened assertions.** Rendering
   itself is human-verified (headless tests can't see pixels).
+
+## 2026-09-23 · Increment 5 (countdown timer) — worked first try
+- **Tried:** added a 50 s per-level `time_limit`; expiry → DYING "Out of time!" → retry.
+- **What happened:** the first run failed **one** unexpected check — my new timer tests
+  left the game `PLAYING` with `deaths=1`, which broke the later `replay-idempotent`
+  (its `start_session()` no-ops when already PLAYING). **Reordered** the timer checks
+  after it (no assertion weakened) → **44/44**. Honest note: this was a test-ordering bug
+  I introduced, caught, and fixed — not a game bug.
+- **Human/AI:** user requested Inc 5; AI implemented, hit the ordering bug, diagnosed and
+  fixed it.
+
+## 2026-09-24 · Inspect-and-revise cycle #4 (Inc-5 playtest — timer feel)
+- **Observed (Sreeja's playtest):** at a 50 s limit the countdown felt **too long** — I
+  finished **under 35 s every run**, so there was no real "beat the clock" pressure.
+- **Decided:** tune the limit to **30 s** (my call). Trade-off noted: my more relaxed
+  ~34 s runs may now time out — that's the intended pressure.
+- **Changed:** `time_limit: 50 → 30` in `first_steps.json`. The scripted route still
+  finishes in 12.55 s, so `route-beats-timer` still passes; **44/44**, no test changes
+  needed (the checks read `level.time_limit`).
+- **Human/AI:** I found the feel issue by playing and made the call; the AI applied the
+  one-value change and re-ran the checks.
+
+---
+
+## Traceability & the four Frictional elements
+- **What I tried / what happened:** each entry above — real attempts and outcomes,
+  including unsuccessful ones (the 0.07 px graze, the mid-jump finish, the invisible
+  rescues, the test-ordering bug).
+- **What I checked / changed / learned:** the "Checked/changed" and "Status: RESOLVED"
+  lines, plus unresolved notes (P3's ~10 px margin flagged for playtest).
+- **Human vs. AI:** the "Human/AI" line in every entry — the ideas, the decisions on what
+  to build and how to modify the game, and the manual play-testing/retrying after each
+  change are **Sreeja's**; the AI is the **supporting tool** that implemented those
+  decisions, ran the checks, and helped diagnose what she found.
+- **Traceability to commits / tests / observations:**
+  - Postman milestone → commit **`8672fe3`** (PR #1, on `main`).
+  - Firefighter Increments 1–4 → commit **`ccaa31b`** (PR #2, merge `1dfac3f`).
+  - Increment 5 (timer) → next commit on `working`.
+  - Tests (all in `godot/tests/test_game.gd`): `flame-clearance-positive`,
+    `extension-climb-and-detour`, `exit-locked-without-rescues`,
+    `survivor-removed-on-rescue`, `walk-into-flame-P1/P3/P4`, `route-beats-timer`,
+    `timer-expiry-fails`, `timer-resets-on-retry`.
+  - Cross-refs: TEST-REPORT.md (per increment + consolidated), WORK-PROGRESS.md (Entries 7–12).

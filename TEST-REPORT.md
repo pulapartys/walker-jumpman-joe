@@ -154,3 +154,58 @@ Playtest found rendering/placement bugs the automated tests missed (they assert 
 - `walk-into-flame-P1/P3/P4`: **DYING** → flames now kill a walking player (rects raised to stick up above each platform).
 - `complete-real-route`: still **0 deaths, rescued 2/2** — the scripted jumps clear the now-taller flames. Real clearances **P1 14.1 / P3 10.1 / P4 17.8px** (lower than before because flames are 14px taller; still positive — P3 tightest).
 - `queue_redraw()` added to `session._physics_process` fixes the stale dynamic visuals (survivors vanish, SAVED! popup, fire-escape unlock). Rendering confirmed by **human visual check** (tests can't see pixels).
+
+---
+
+## Firefighter Rescue — Increment 5 (countdown timer) · 2026-09-23
+
+### System tests (automated) — ✅ 44/44
+`test_game.gd` **35/35** (added `route-beats-timer`, `timer-expiry-fails`, `timer-resets-on-retry`); `test_keyboard.gd` **9/9**.
+- `route-beats-timer`: the scripted route finishes in **12.55s** of the **50s** limit (comfortable human margin).
+- `timer-expiry-fails`: hitting 0 → **DYING** with reason **"Out of time!"** → retry.
+- `timer-resets-on-retry`: after a timeout retry, `elapsed` is back to ~0 (timer full).
+- Pause still freezes the timer (`pause-freezes` unchanged). No assertions weakened.
+
+### Manual tests (human) — played 2026-09-24
+- **HUD countdown** reads clearly (red under 10s); running out → "Out of time!" + retry with a full timer — confirmed.
+- **Feel/tuning:** at 50 s the timer felt **too long** — Sreeja finished **under 35 s every run**, so there was no real pressure. Tuned the limit to **30 s** (her call). The scripted route still finishes in 12.55 s (`route-beats-timer` passes at 30 s). Trade-off: leisurely ~34 s runs may now time out — the intended pressure. See FRICTIONAL cycle #4.
+- **Dynamic visuals confirmed in play (human, 2026-09-24):** on rescue the **"SAVED!" popup appears**, the rescued **person and dog vanish** from their spots, and **their heads appear in the firefighter's bag** — confirming the Iteration-3 `queue_redraw()` fix **at runtime** (the automated suite verifies state/data, not pixels).
+
+---
+
+## Consolidated verification — the finished game (timer build) · 2026-09-24
+
+The rubric's six Verification checks against the final build (Increments 1–5).
+Automated is fully verified; the manual rows cite the **real** per-iteration playtests
+(FRICTIONAL cycles + the entries above), with a **final end-to-end pass** of the timer
+build recorded with the player's own observations before the film.
+
+| # | Rubric check | Status | Evidence |
+|---|---|---|---|
+| 1 | **Startup & controls** — runs; move/jump/pause-resume/restart work | ✅ | `test_keyboard.gd` 9/9 (start, move, jump, pause, resume, retry, replay, menu) + iterative play |
+| 2 | **Character appearance** — L/R, standing, jumping; no visual/collision mismatch | ✅ | firefighter reads in all states; bag heads visible (Iter 2–3 playtests); collider unchanged (jump rise 56.07 identical) |
+| 3 | **Extended route** — a normal route reaches both new landings + relocated finish | ✅ | Inc-3 playtest reached the window (~42 s, 0 retries); Inc-4 rescues both then exits; `complete-real-route` 0 deaths |
+| 4 | **Failure & recovery** — real hazard/miss → retry; replay after completion | ✅ | fire death + fall → retry (Inc-3/4 play); `walk-into-flame-P1/P3/P4` lethal; timeout → retry; `replay-idempotent` |
+| 5 | **Camera & presentation** — extension + landing/finish info visible/readable | ✅ | Inc-3 playtest confirmed readability across the wider level; hidden "02" label fixed (Iter 3) |
+| 6 | **Automated checks** — commands + results + any updated/failed tests | ✅ | **44/44** (`test_game` 35 + `test_keyboard` 9); route/finish fixtures updated for the new layout; a `replay-idempotent` ordering issue was fixed (not weakened) |
+
+**Remaining before the film: one final end-to-end run of the timer build** — climb →
+rescue both → beat the clock → jump out → replay — to be recorded here with the player's
+real observations (especially the **countdown timer** and the **P3 ~10 px** jump feel).
+_No playtester or observation is invented._
+
+---
+
+## Two-building level redesign — runtime verification (automated) · 2026-09-24
+Rebuilt the level as **two burning buildings** (person in B1, dog in B2, a burning street between, B2 rooftop = gated exit). Re-layout + re-draw; mechanics unchanged.
+
+### System tests (automated) — ✅ 44/44
+`test_game.gd` **35/35**, `test_keyboard.gd` **9/9**.
+- `complete-real-route`: **0 deaths, rescued 2/2**, reaches the **B2 roof exit** (1999, 164) in **761 ticks (~12.7 s)** — the full path works: approach → climb B1 (rescue person) → **descent to B1's base** → **burning-street jump** → climb B2 (rescue dog) → gated roof exit.
+- `reached-b2-roof-both-rescued`: PASS (replaces the old detour check).
+- **Failure case #1 (descent into the street): cleared** — the route survives the drop + street with 0 deaths → the drop lands on B1's wide base, not the street.
+- **Failure case #2 (flame lethal + jumpable): cleared** — `walk-into-flame-B1L1/B2L1/B2L2` all **DYING**; real margins **B1-L1 10.1 / street 5.8 / B2-L1 10.1 / B2-L2 10.1 px** (a first pass grazed at −3.5 px vs the rect top → widened the window ledges + earlier takeoffs).
+- `exit-locked-without-rescues` (now at the B2 roof), `survivor-removed-on-rescue` (new person pos), `route-beats-timer` (12.7 / 30 s) all pass. **No assertions weakened.**
+
+### Manual (human) — ⏳ PENDING
+Play it: climb B1 → rescue person → down → cross the burning street → climb B2 → rescue dog → jump off the B2 roof. **Watch the timer** — this level is longer than the single-building one, so **30 s may feel tight** (worth re-checking / re-tuning).

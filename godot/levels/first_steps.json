@@ -1,9 +1,10 @@
 {
   "id": "first-alarm",
-  "title": "Firefighter Rescue — First Alarm",
-  "scope": "Extended: original approach (reskinned) + burning-building climb, rescue + window finish",
-  "width": 1900,
+  "title": "Firefighter Rescue — Two-Alarm Fire",
+  "scope": "Two burning buildings: rescue a person from B1 and a dog from B2, cross the burning street, escape off the B2 roof.",
+  "width": 2200,
   "fall_y": 430,
+  "time_limit": 30,
   "spawn": [64, 320],
   "solids": [
     [0, 320, 448, 64],
@@ -11,22 +12,29 @@
     [784, 320, 176, 64],
     [160, 304, 48, 16],
     [576, 288, 48, 32],
-    [1000, 282, 100, 16],
-    [1130, 246, 110, 16],
-    [1270, 210, 120, 16],
-    [1410, 174, 120, 16],
-    [1560, 138, 180, 16],
-    [1760, 164, 80, 16]
+    [1000, 320, 400, 64],
+    [1060, 280, 90, 16],
+    [1175, 240, 115, 16],
+    [1470, 320, 320, 64],
+    [1530, 280, 90, 16],
+    [1645, 240, 115, 16],
+    [1790, 200, 90, 16],
+    [1920, 164, 150, 16]
+  ],
+  "buildings": [
+    [1000, 210, 400, 110],
+    [1470, 150, 600, 170]
   ],
   "hazards": [
     [320, 304, 24, 16],
-    [1078, 268, 14, 14],
-    [1372, 196, 14, 14],
-    [1512, 160, 14, 14]
+    [1136, 266, 14, 14],
+    [1405, 306, 60, 14],
+    [1606, 266, 14, 14],
+    [1866, 186, 14, 14]
   ],
   "survivors": [
-    [1185, 246, "person"],
-    [1795, 164, "dog"]
+    [1240, 240, "person"],
+    [1710, 240, "dog"]
   ],
-  "finish": [1560, 112, 26, 44]
+  "finish": [2000, 140, 30, 44]
 }

@@ -128,9 +128,9 @@ func run() -> void:
 	await fresh()
 	var route = Route.new()
 	var route_ticks := 0
-	var climb_flames := [Rect2(1078,268,14,14), Rect2(1372,196,14,14), Rect2(1512,160,14,14)]  # on P1, P3, P4 (stick up above surface)
-	var min_clears := [999.0, 999.0, 999.0]
-	while game.state == Game.State.PLAYING and route_ticks < 2000:
+	var climb_flames := [Rect2(1136,266,14,14), Rect2(1405,306,60,14), Rect2(1606,266,14,14), Rect2(1866,186,14,14)]  # B1-L1, street, B2-L1, B2-L2
+	var min_clears := [999.0, 999.0, 999.0, 999.0]
+	while game.state == Game.State.PLAYING and route_ticks < 2500:
 		route.step(game.player)
 		await steps(1)
 		route_ticks += 1
@@ -141,35 +141,43 @@ func run() -> void:
 				var fl: Rect2 = climb_flames[fi]
 				if px + 9.0 >= fl.position.x and px - 9.0 <= fl.end.x:
 					min_clears[fi] = minf(min_clears[fi], fl.position.y - py)
-	check("complete-real-route", game.state == Game.State.COMPLETE and game.deaths == 0 and game.rescued_count == game.survivors.size(), {"state":game.state,"deaths":game.deaths,"ticks":route_ticks,"rescued":game.rescued_count,"phase":route.phase,"returned":route.returned})
-	check("extension-climb-and-detour", route.returned and route.phase >= 3 and game.rescued_count == 2, {"returned":route.returned,"phase":route.phase,"rescued":game.rescued_count})
-	check("flame-clearance-positive", min_clears[0] > 0.0 and min_clears[1] > 0.0 and min_clears[2] > 0.0, {"P1":min_clears[0],"P3":min_clears[1],"P4":min_clears[2]})
-	# Gating: reaching the exit without both rescues must NOT complete.
+	check("complete-real-route", game.state == Game.State.COMPLETE and game.deaths == 0 and game.rescued_count == game.survivors.size(), {"state":game.state,"deaths":game.deaths,"ticks":route_ticks,"rescued":game.rescued_count,"pos":str(game.player.position),"marks":route.next_jump})
+	check("route-beats-timer", game.state == Game.State.COMPLETE and game.elapsed < float(game.level.time_limit), {"elapsed":game.elapsed, "limit":game.level.time_limit})
+	check("reached-b2-roof-both-rescued", game.state == Game.State.COMPLETE and game.rescued_count == 2 and game.player.position.x > 1900.0 and game.player.position.y < 180.0, {"rescued":game.rescued_count, "pos":str(game.player.position)})
+	check("flame-clearance-positive", min_clears[0] > 0.0 and min_clears[1] > 0.0 and min_clears[2] > 0.0 and min_clears[3] > 0.0, {"B1L1":min_clears[0],"street":min_clears[1],"B2L1":min_clears[2],"B2L2":min_clears[3]})
+	# Gating: reaching the B2 roof exit without both rescues must NOT complete.
 	await fresh()
-	game.player.position = Vector2(1573, 138)
+	game.player.position = Vector2(2013, 164)  # on the B2 roof, at the exit, 0 rescued
 	await steps(4)
 	check("exit-locked-without-rescues", game.state == Game.State.PLAYING and game.rescued_count == 0, {"state":game.state,"rescued":game.rescued_count})
 	# A rescued survivor is fully removed from the path (no lingering trigger / HELP).
 	await fresh()
-	game.player.position = Vector2(1185, 246)  # stand on the person
+	game.player.position = Vector2(1240, 240)  # stand on the person (B1 window)
 	await steps(4)
 	check("survivor-removed-on-rescue", game.survivors[0].rescued and not game.survivors[0].area.monitoring and game.player.bag_types.size() >= 1, {"person_rescued":game.survivors[0].rescued, "still_monitoring":game.survivors[0].area.monitoring, "bag":game.player.bag_types.size()})
-	# Platform flames must kill a player standing/walking in them (not only clear an over-jump).
+	# Stick-up platform flames must kill a player standing/walking in them.
 	await fresh()
-	game.player.position = Vector2(1085, 282)  # standing in the P1 flame
+	game.player.position = Vector2(1143, 280)  # in the B1-L1 flame
 	await steps(4)
-	check("walk-into-flame-P1", game.state == Game.State.DYING, {"state":game.state})
+	check("walk-into-flame-B1L1", game.state == Game.State.DYING, {"state":game.state})
 	await fresh()
-	game.player.position = Vector2(1379, 210)  # standing in the P3 flame
+	game.player.position = Vector2(1613, 280)  # in the B2-L1 flame
 	await steps(4)
-	check("walk-into-flame-P3", game.state == Game.State.DYING, {"state":game.state})
+	check("walk-into-flame-B2L1", game.state == Game.State.DYING, {"state":game.state})
 	await fresh()
-	game.player.position = Vector2(1519, 174)  # standing in the P4 flame
+	game.player.position = Vector2(1873, 200)  # in the B2-L2 flame
 	await steps(4)
-	check("walk-into-flame-P4", game.state == Game.State.DYING, {"state":game.state})
+	check("walk-into-flame-B2L2", game.state == Game.State.DYING, {"state":game.state})
 	game.start_session()
 	game.start_session()
 	check("replay-idempotent", game.state == Game.State.PLAYING and game.deaths == 0 and game.player.jumps == 0, {"state":game.state,"deaths":game.deaths,"jumps":game.player.jumps})
+	# Countdown timer: running out of time fails the attempt, and resets on retry.
+	await fresh()
+	game.elapsed = float(game.level.time_limit) + 1.0
+	await steps(4)
+	check("timer-expiry-fails", game.state == Game.State.DYING and game.death_reason == "Out of time!", {"state":game.state, "reason":game.death_reason})
+	await steps(45)
+	check("timer-resets-on-retry", game.state == Game.State.PLAYING and game.elapsed < 1.0, {"state":game.state, "elapsed":game.elapsed})
 	var report := {"scope":"First Steps slice; not full GDD acceptance or human playtesting", "engine":Engine.get_version_info().string,"created_at":Time.get_datetime_string_from_system(true),"results":results,"failures":failures}
 	var out := ProjectSettings.globalize_path("res://../evidence")
 	DirAccess.make_dir_recursive_absolute(out)

@@ -171,6 +171,21 @@ What each code file does, so a reviewer understands the starting point:
 - **Visual (human) to verify:** flames kill on touch (also now tested), rescued survivors vanish, SAVED! shows, exit unlocks.
 - **Human/AI:** reviewer found the bugs in playtest; AI diagnosed the redraw + rect-placement root causes, fixed, and added lethality tests.
 
+### 2026-09-23 · Entry 12 — Increment 5: countdown timer
+- **Data:** `time_limit: 30` in `first_steps.json` (per-level; tuned from 50 → 30 after Sreeja's playtest — she finished under 35 s every run; see FRICTIONAL cycle #4).
+- **`session.gd`:** timeout fails the attempt (`elapsed >= time_limit` → fatal, reason "Out of time!"); resets on retry (elapsed already zeroed). Fire/fall/time death reasons prioritized. State machine unchanged (added fail reason only); timer freezes when paused.
+- **`hud.gd`:** timer now counts **DOWN** (TIME remaining), turns **red under 10s**.
+- **Tests:** added `route-beats-timer` (12.55/50s), `timer-expiry-fails` (DYING + "Out of time!"), `timer-resets-on-retry`; reordered so the timer checks don't pollute `replay-idempotent`. **44/44**, none weakened.
+- **Manual:** ⏳ pending playtest.
+- **Human/AI:** user requested Inc 5; AI implemented + tested. **Completes the core game (increments 1–5).**
+
+### 2026-09-24 · Entry 13 — Level redesign: two burning buildings (documented; building)
+- **Design:** approach → Building 1 (person's window) → descent to B1's wide base → burning street (ground-level gap + fire, one jump) → Building 2 (dog's window) → B2 rooftop gated exit. Reuses all mechanics; re-layout + re-draw only.
+- **Files:** `first_steps.json` (new solids/hazards/survivors/finish/`buildings`/width 2200); `session.gd` (two facades drawn behind the data-driven ledges + rescue windows + burning street + label reposition; exit repositions via `finish`); `route_driver.gd` (simplify to linear marks); `test_game.gd` (reposition checks; replace `extension-climb-and-detour` with "reached B2 roof + both rescued").
+- **Predicted failure cases:** (1) descent drops into the street (mitigated: wide B1 base); (2) a platform flame non-lethal/non-jumpable (checked via `walk-into-flame` + real clearance). See CHANGE-BRIEF two-building revision.
+- **Status:** ✅ built + verified — **44/44**; route 0 deaths reaches the B2 roof with both rescued (~12.7 s); flame clearances B1-L1/B2-L1/B2-L2 = 10 px, street 5.8 px; all `walk-into-flame` lethal; descent lands on B1's base; gating at the roof. First flame pass grazed (−3.5 px) → widened window ledges + earlier takeoffs. Human playtest pending (⚠️ 30 s timer may be tight on this longer level).
+- **Human/AI:** Sreeja approved the two-building design + coords; AI builds + verifies on the real engine.
+
 ---
 
 ## Supporting docs (not code)
