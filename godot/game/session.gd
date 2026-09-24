@@ -17,6 +17,11 @@ var death_reason: String = ""
 var last_finish_time: float = 0.0
 var test_mode: bool = false
 var contact_settle_ticks: int = 0
+var survivors: Array = []       # [{area, type, rescued, x, y}] — the trapped survivors
+var rescued_count: int = 0      # how many rescued this attempt
+var locked_cue_ticks: int = 0   # frames left to flash the "rescue everyone" cue
+var saved_popup_ticks: int = 0  # frames left to show the "SAVED!" popup
+var saved_popup_pos: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	process_physics_priority = 10
@@ -30,6 +35,9 @@ func _ready() -> void:
 		hazard_areas.append(_add_area(Rect2(entry[0], entry[1], entry[2], entry[3]), 8, true))
 	var f: Array = level.finish
 	goal = _add_area(Rect2(f[0], f[1], f[2], f[3]), 16, false)
+	for entry in level.survivors:
+		var area := _add_area(Rect2(entry[0] - 8.0, entry[1] - 22.0, 16.0, 22.0), 32, false)
+		survivors.append({"area": area, "type": String(entry[2]), "rescued": false, "x": float(entry[0]), "y": float(entry[1])})
 	player = Player.new()
 	add_child(player)
 	player.reset_at(Vector2(level.spawn[0], level.spawn[1]))
@@ -105,6 +113,12 @@ func restart_attempt() -> void:
 	player.reset_at(Vector2(level.spawn[0], level.spawn[1]))
 	player.enabled = true
 	camera.position = Vector2(320, 180)
+	rescued_count = 0
+	locked_cue_ticks = 0
+	saved_popup_ticks = 0
+	for s in survivors:
+		s.rescued = false
+		s.area.set_deferred("monitoring", true)
 
 func set_paused(value: bool) -> void:
 	if value and state == State.PLAYING:
@@ -143,16 +157,37 @@ func _physics_process(delta: float) -> void:
 	elif state == State.PLAYING:
 		elapsed += delta
 		var fatal := player.position.y > float(level.fall_y)
-		death_reason = "Missed the landing" if fatal else "Watch the spikes"
+		death_reason = "You fell." if fatal else "The fire got you."
 		for hazard in hazard_areas:
 			fatal = fatal or hazard.overlaps_body(player)
+		# Touch to rescue: overlapping a survivor saves them.
+		for s in survivors:
+			if not s.rescued and s.area.overlaps_body(player):
+				s.rescued = true
+				s.area.set_deferred("monitoring", false)
+				rescued_count += 1
+				player.rescued = rescued_count
+				player.bag_types.append(s.type)
+				saved_popup_ticks = 55
+				saved_popup_pos = Vector2(s.x - 18.0, s.y - 34.0)
+		var all_rescued := rescued_count >= survivors.size()
+		var at_exit := goal.overlaps_body(player) and player.is_on_floor()
+		if at_exit and not all_rescued:
+			locked_cue_ticks = 45  # flash "rescue everyone first"
+		if locked_cue_ticks > 0:
+			locked_cue_ticks -= 1
+		if saved_popup_ticks > 0:
+			saved_popup_ticks -= 1
 		if contact_settle_ticks > 0:
 			contact_settle_ticks -= 1
 		else:
-			resolve_contacts(fatal, goal.overlaps_body(player))
+			# Exit completes only when BOTH survivors are rescued AND reached on foot.
+			# State machine unchanged; only the COMPLETE condition gains "both rescued".
+			resolve_contacts(fatal, at_exit and all_rescued)
 		camera.position.x = clampf(player.position.x + 100, 320, float(level.width) - 320)
 	if is_instance_valid(hud):
 		hud.queue_redraw()
+	queue_redraw()  # refresh the level's own dynamic draw: survivors vanish, SAVED! animates, exit unlocks
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.echo:
@@ -182,12 +217,13 @@ func _draw() -> void:
 	var font := ThemeDB.fallback_font
 	var ink := Color("25354a")
 	# All visual assets are original Godot vector drawing, not recovered art.
-	draw_rect(Rect2(-400, -200, 1800, 900), Color("f6f3ec"))
-	for x in range(0, 961, 32):
-		draw_line(Vector2(x, 80), Vector2(x, 320), Color("e7e5df"), 1)
+	var lw: int = int(level.width)
+	draw_rect(Rect2(-400, -260, float(lw) + 800.0, 1000), Color("f6f3ec"))
+	for x in range(0, lw + 1, 32):
+		draw_line(Vector2(x, 64), Vector2(x, 320), Color("e7e5df"), 1)
 	for y in range(96, 321, 32):
-		draw_line(Vector2(0, y), Vector2(960, y), Color("e7e5df"), 1)
-	for x in [100, 470, 770]:
+		draw_line(Vector2(0, y), Vector2(lw, y), Color("e7e5df"), 1)
+	for x in range(100, lw, 340):
 		draw_colored_polygon(PackedVector2Array([Vector2(x-90,320),Vector2(x+50,180),Vector2(x+190,320)]), Color("e4e8e3"))
 	for entry in level.solids:
 		var r := Rect2(entry[0], entry[1], entry[2], entry[3])
@@ -195,30 +231,69 @@ func _draw() -> void:
 		draw_rect(Rect2(r.position, Vector2(r.size.x, 4)), Color("438e7d"))
 		for x in range(int(r.position.x)+12, int(r.end.x), 24):
 			draw_line(Vector2(x, r.position.y+12), Vector2(x+7, r.position.y+19), Color("405166"), 1)
+	# Fire hazard drawn as bold flames, data-driven from the hazard rect. The VISUAL is
+	# enlarged for readability but the COLLISION (the rect, built in _add_area) is
+	# UNCHANGED, so the jump-over margins verified by flame-clearance-positive still
+	# hold. Flame tips stay below the player's jump clearance, so a cleared jump does
+	# not clip the visual.
 	for entry in level.hazards:
-		for i in range(3):
-			var x: float = entry[0] + i*8
-			draw_colored_polygon(PackedVector2Array([Vector2(x,320),Vector2(x+4,304),Vector2(x+8,320)]), Color("d24e42"))
-	# Finish marker: a red postbox (Postman's Rush). Drawn from level.finish so it
-	# stays aligned with the goal collision box (data-driven, not hard-coded Y) —
-	# when the finish moves during the level extension, the postbox moves with it.
+		var hx: float = entry[0]
+		var hy: float = entry[1]
+		var hw: float = entry[2]
+		var base_y: float = hy + entry[3]
+		var tongues: int = maxi(1, int(hw / 12.0))
+		var span: float = hw / float(tongues)
+		for i in range(tongues):
+			var cx: float = hx + span * (float(i) + 0.5)
+			var tip: float = hy - 6.0 - (2.0 if i % 2 == 0 else 0.0)
+			draw_colored_polygon(PackedVector2Array([Vector2(cx-span*0.5, base_y), Vector2(cx-3, hy+3), Vector2(cx, tip), Vector2(cx+3, hy+3), Vector2(cx+span*0.5, base_y)]), Color("e0411c"))
+			draw_colored_polygon(PackedVector2Array([Vector2(cx-span*0.3, base_y), Vector2(cx-2, hy+4), Vector2(cx, tip+3), Vector2(cx+2, hy+4), Vector2(cx+span*0.3, base_y)]), Color("f5a01f"))
+			draw_colored_polygon(PackedVector2Array([Vector2(cx-2, base_y), Vector2(cx, hy+2), Vector2(cx+2, base_y)]), Color("ffe95a"))
+	# Finish: a FIRE-ESCAPE window. Data-driven from level.finish; LOCKED until both
+	# survivors are rescued, then it brightens with a "JUMP OUT" prompt.
 	var fr := Rect2(level.finish[0], level.finish[1], level.finish[2], level.finish[3])
-	var post_red := Color("c1392e")
-	var post_dark := Color("8f271f")
-	# domed top (outline, then red)
-	draw_circle(fr.position + Vector2(fr.size.x / 2.0, 8.0), fr.size.x / 2.0, ink)
-	draw_circle(fr.position + Vector2(fr.size.x / 2.0, 8.0), fr.size.x / 2.0 - 1.5, post_red)
-	# body (outline, then red fill)
-	draw_rect(Rect2(fr.position.x - 1.0, fr.position.y + 6.0, fr.size.x + 2.0, fr.size.y - 6.0), ink)
-	draw_rect(Rect2(fr.position.x, fr.position.y + 7.0, fr.size.x, fr.size.y - 7.0), post_red)
-	# mail slot
-	draw_rect(Rect2(fr.position.x + 4.0, fr.position.y + 15.0, fr.size.x - 8.0, 3.0), ink)
-	# gold collection band
-	draw_rect(Rect2(fr.position.x + 2.0, fr.position.y + 34.0, fr.size.x - 4.0, 6.0), Color("f2c94c"))
-	draw_rect(Rect2(fr.position.x + 2.0, fr.position.y + 40.0, fr.size.x - 4.0, 1.0), post_dark)
-	# base
-	draw_rect(Rect2(fr.position.x - 2.0, fr.end.y - 4.0, fr.size.x + 4.0, 4.0), post_dark)
-	draw_string(font, Vector2(33, 251), "01 / GET MOVING", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
-	draw_string(font, Vector2(33, 273), "Read the landing. Then jump.", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ink)
-	draw_string(font, Vector2(474, 227), "02 / MIND THE GAP", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
-	draw_string(font, Vector2(878, 225), "FINISH", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
+	var all_saved := rescued_count >= survivors.size()
+	var glow := Color("e8792b") if all_saved else Color("6b7683")
+	var pane := Color("ffe08a") if all_saved else Color("aeb7c2")
+	draw_rect(Rect2(fr.position.x - 3.0, fr.position.y - 3.0, fr.size.x + 6.0, fr.size.y + 6.0), glow)
+	draw_rect(fr, ink)
+	draw_rect(Rect2(fr.position.x + 2.0, fr.position.y + 2.0, fr.size.x - 4.0, fr.size.y - 4.0), pane)
+	draw_rect(Rect2(fr.position.x + fr.size.x / 2.0 - 1.0, fr.position.y + 2.0, 2.0, fr.size.y - 4.0), ink)
+	draw_rect(Rect2(fr.position.x + 2.0, fr.position.y + fr.size.y / 2.0 - 1.0, fr.size.x - 4.0, 2.0), ink)
+	draw_rect(Rect2(fr.position.x - 2.0, fr.end.y - 2.0, fr.size.x + 4.0, 3.0), ink)
+	if all_saved:
+		draw_string(font, Vector2(fr.position.x - 22.0, fr.position.y - 14.0), "JUMP OUT →", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("287c68"))
+	else:
+		var lx: float = fr.position.x + fr.size.x / 2.0
+		var ly: float = fr.position.y + fr.size.y / 2.0
+		draw_rect(Rect2(lx - 4.0, ly - 1.0, 8.0, 7.0), Color("3a2f1a"))
+		draw_arc(Vector2(lx, ly - 1.0), 3.0, PI, TAU, 8, Color("3a2f1a"), 1.5)
+		draw_string(font, Vector2(fr.position.x - 40.0, fr.position.y - 14.0), "FIRE ESCAPE", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ink)
+	if locked_cue_ticks > 0:
+		draw_string(font, Vector2(fr.position.x - 66.0, fr.position.y - 30.0), "Rescue everyone first!", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color("a23e36"))
+	# "SAVED!" popup that rises + fades at the moment of a rescue.
+	if saved_popup_ticks > 0:
+		var pa: float = clampf(float(saved_popup_ticks) / 55.0, 0.0, 1.0)
+		var rise: float = float(55 - saved_popup_ticks) * 0.35
+		draw_string(font, saved_popup_pos - Vector2(0.0, rise), "SAVED!", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.16, 0.49, 0.41, pa))
+	# Trapped survivors (un-rescued only), each with a HELP! bubble to draw the player in.
+	for s in survivors:
+		if s.rescued:
+			continue
+		var sx: float = s.x
+		var sy: float = s.y
+		if s.type == "dog":
+			draw_rect(Rect2(sx - 6.0, sy - 7.0, 12.0, 6.0), Color("8a5a2b"))
+			draw_circle(Vector2(sx + 6.0, sy - 9.0), 3.5, Color("8a5a2b"))
+			draw_rect(Rect2(sx - 5.0, sy - 3.0, 2.0, 3.0), Color("5c3a1c"))
+			draw_rect(Rect2(sx + 3.0, sy - 3.0, 2.0, 3.0), Color("5c3a1c"))
+		else:
+			draw_rect(Rect2(sx - 4.0, sy - 18.0, 8.0, 14.0), Color("3d6cb0"))
+			draw_circle(Vector2(sx, sy - 20.0), 4.0, Color("e8b98f"))
+			draw_rect(Rect2(sx - 4.0, sy - 4.0, 3.0, 4.0), Color("25354a"))
+			draw_rect(Rect2(sx + 1.0, sy - 4.0, 3.0, 4.0), Color("25354a"))
+		draw_rect(Rect2(sx - 12.0, sy - 40.0, 26.0, 13.0), Color("fff2b0"))
+		draw_string(font, Vector2(sx - 9.0, sy - 30.0), "HELP!", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color("a23e36"))
+	draw_string(font, Vector2(33, 251), "01 / GET TO THE BUILDING", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
+	draw_string(font, Vector2(33, 273), "Save the person + dog. Then out the fire escape.", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ink)
+	draw_string(font, Vector2(1000, 232), "02 / CLIMB & RESCUE", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
