@@ -22,6 +22,11 @@ var rescued_count: int = 0      # how many rescued this attempt
 var locked_cue_ticks: int = 0   # frames left to flash the "rescue everyone" cue
 var saved_popup_ticks: int = 0  # frames left to show the "SAVED!" popup
 var saved_popup_pos: Vector2 = Vector2.ZERO
+const EXTINGUISH_TICKS := 240          # 4 s @ 60 Hz for the fire to fully die (half by 2 s)
+var fire_active: bool = true           # lethal + blocks the rescue until FULLY hosed
+var extinguish_ticks: int = 0          # frames until the fire is out (240 = full, 0 = out)
+var water_ticks: int = 0               # frames the water visual keeps pouring (lingers ~1 s)
+var near_fire: bool = false            # player in hose range this frame (for the prompt)
 
 func _ready() -> void:
 	process_physics_priority = 10
@@ -53,7 +58,7 @@ func _ready() -> void:
 	queue_redraw()
 
 func _setup_input() -> void:
-	var actions := {"move_left": [KEY_A, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT], "jump": [KEY_SPACE], "pause": [KEY_ESCAPE, KEY_P], "restart": [KEY_R], "confirm": [KEY_ENTER], "menu": [KEY_M]}
+	var actions := {"move_left": [KEY_A, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT], "jump": [KEY_SPACE], "pause": [KEY_ESCAPE, KEY_P], "restart": [KEY_R], "confirm": [KEY_ENTER], "menu": [KEY_M], "water": [KEY_W]}
 	for action in actions:
 		if InputMap.has_action(action):
 			continue
@@ -116,9 +121,22 @@ func restart_attempt() -> void:
 	rescued_count = 0
 	locked_cue_ticks = 0
 	saved_popup_ticks = 0
+	fire_active = true
+	extinguish_ticks = 0
+	water_ticks = 0
 	for s in survivors:
 		s.rescued = false
 		s.area.set_deferred("monitoring", true)
+
+# Blocking-fire height in px: full until hosing starts, then shrinks linearly to 0
+# over EXTINGUISH_TICKS (half by 2 s). Drives both the flame visual and the kill-zone.
+func fire_height() -> float:
+	if not fire_active or not level.has("blocking_fire"):
+		return 0.0
+	var full: float = float(level.blocking_fire[3])
+	if extinguish_ticks > 0:
+		return full * float(extinguish_ticks) / float(EXTINGUISH_TICKS)
+	return full
 
 func set_paused(value: bool) -> void:
 	if value and state == State.PLAYING:
@@ -162,19 +180,45 @@ func _physics_process(delta: float) -> void:
 		for hazard in hazard_areas:
 			if hazard.overlaps_body(player):
 				hit_fire = true
+		# The blocking fire is lethal + blocks the path until FULLY hosed. Its kill-zone
+		# shrinks from the top with the flames (see fire_height), but the base stays lethal
+		# until the fire is completely out -- so walking in mid-extinguish still kills.
+		if fire_active and level.has("blocking_fire"):
+			var bf0: Array = level.blocking_fire
+			var fire_top: float = (float(bf0[1]) + float(bf0[3])) - fire_height()
+			if player.position.x + 9.0 > float(bf0[0]) and player.position.x - 9.0 < float(bf0[0]) + float(bf0[2]) and player.position.y > fire_top and player.position.y - 28.0 < float(bf0[1]) + float(bf0[3]):
+				hit_fire = true
 		var fatal := fell or timed_out or hit_fire
 		if fatal:
 			death_reason = "Out of time!" if timed_out else ("You fell." if fell else "The fire got you.")
-		# Touch to rescue: overlapping a survivor saves them.
-		for s in survivors:
-			if not s.rescued and s.area.overlaps_body(player):
-				s.rescued = true
-				s.area.set_deferred("monitoring", false)
-				rescued_count += 1
-				player.rescued = rescued_count
-				player.bag_types.append(s.type)
-				saved_popup_ticks = 55
-				saved_popup_pos = Vector2(s.x - 18.0, s.y - 34.0)
+		# Hose: tap W within range of the blocking fire -> water pours ~4 s -> fire out.
+		near_fire = false
+		if fire_active and level.has("blocking_fire"):
+			var bf: Array = level.blocking_fire
+			near_fire = player.is_on_floor() and player.position.x > float(bf[0]) - 50.0 and player.position.x < float(bf[0]) + float(bf[2]) + 10.0 and player.position.y < float(bf[1]) + float(bf[3]) + 20.0 and player.position.y > float(bf[1]) - 40.0
+			var water: bool = player.test_water_pressed if player.test_control else Input.is_action_just_pressed("water")
+			if player.test_control:
+				player.test_water_pressed = false
+			if water and near_fire and extinguish_ticks == 0:
+				extinguish_ticks = EXTINGUISH_TICKS
+				water_ticks = EXTINGUISH_TICKS + 60  # water lingers ~1 s after it is out
+		if extinguish_ticks > 0:
+			extinguish_ticks -= 1
+			if extinguish_ticks == 0:
+				fire_active = false
+		if water_ticks > 0:
+			water_ticks -= 1
+		# Touch to rescue -- only while NOT in a fatal state, so you can't rescue THROUGH fire.
+		if not fatal:
+			for s in survivors:
+				if not s.rescued and s.area.overlaps_body(player):
+					s.rescued = true
+					s.area.set_deferred("monitoring", false)
+					rescued_count += 1
+					player.rescued = rescued_count
+					player.bag_types.append(s.type)
+					saved_popup_ticks = 55
+					saved_popup_pos = Vector2(s.x - 18.0, s.y - 34.0)
 		var all_rescued := rescued_count >= survivors.size()
 		var at_exit := goal.overlaps_body(player) and player.is_on_floor()
 		if at_exit and not all_rescued:
@@ -233,13 +277,13 @@ func _draw() -> void:
 	# Burning buildings — decorative facades drawn BEHIND the ledges (no collision).
 	for b in level.get("buildings", []):
 		var bl := Rect2(b[0], b[1], b[2], b[3])
-		draw_rect(bl, Color("3a3f4a"))                                         # dark wall
-		draw_rect(Rect2(bl.position, Vector2(bl.size.x, 5)), Color("2a2e37"))  # roof cap
-		draw_rect(bl, Color(0.88, 0.35, 0.12, 0.13))                           # fire glow over the wall
-		for wx in range(int(bl.position.x) + 18, int(bl.end.x) - 14, 42):
+		draw_rect(bl, Color("e0cdaf"))                                         # very light brown wall (contrast for dark figures)
+		draw_rect(Rect2(bl.position, Vector2(bl.size.x, 5)), Color("a3855f"))  # roof cap (medium brown)
+		draw_rect(bl, Color(0.96, 0.46, 0.16, 0.18))                           # warm fire glow (keeps the burning read)
+		for wx in range(int(bl.position.x) + 18, int(bl.end.x) - 14, 84):
 			for wy in range(int(bl.position.y) + 16, int(bl.end.y) - 24, 34):
-				draw_rect(Rect2(wx, wy, 13, 17), Color("23262e"))
-				draw_rect(Rect2(wx + 2, wy + 2, 9, 13), Color("d0641f") if (wx * 3 + wy) % 7 < 3 else Color("30343d"))
+				draw_rect(Rect2(wx, wy, 13, 17), Color("6f5c46"))
+				draw_rect(Rect2(wx + 2, wy + 2, 9, 13), Color("f2ecd8"))
 	for entry in level.solids:
 		var r := Rect2(entry[0], entry[1], entry[2], entry[3])
 		draw_rect(r, ink)
@@ -297,22 +341,84 @@ func _draw() -> void:
 			continue
 		var sx: float = s.x
 		var sy: float = s.y
-		# a fire-lit rescue window the survivor is trapped at (lines up with the trigger)
-		draw_rect(Rect2(sx - 12.0, sy - 30.0, 24.0, 30.0), ink)
-		draw_rect(Rect2(sx - 10.0, sy - 28.0, 20.0, 28.0), Color("e39a3f"))
+		# rescue window: thin frame + DARK interior + soft fire backlight (a clear opening, not a flat box)
+		draw_rect(Rect2(sx - 13.0, sy - 33.0, 26.0, 33.0), ink)                             # frame
+		draw_rect(Rect2(sx - 11.0, sy - 31.0, 22.0, 31.0), Color("241d1b"))                 # dark room interior
+		draw_rect(Rect2(sx - 11.0, sy - 15.0, 22.0, 15.0), Color(0.98, 0.55, 0.22, 0.30))   # soft fire glow, low
 		if s.type == "dog":
-			draw_rect(Rect2(sx - 6.0, sy - 7.0, 12.0, 6.0), Color("8a5a2b"))
-			draw_circle(Vector2(sx + 6.0, sy - 9.0), 3.5, Color("8a5a2b"))
-			draw_rect(Rect2(sx - 5.0, sy - 3.0, 2.0, 3.0), Color("5c3a1c"))
-			draw_rect(Rect2(sx + 3.0, sy - 3.0, 2.0, 3.0), Color("5c3a1c"))
+			# clearly a dog: tail + body + four legs + head + snout + ear (dark outline, warm fill)
+			var dg := Color("d59243")
+			draw_colored_polygon(PackedVector2Array([Vector2(sx-7,sy-9), Vector2(sx-11,sy-14), Vector2(sx-9,sy-14.5), Vector2(sx-6,sy-8)]), ink)
+			draw_colored_polygon(PackedVector2Array([Vector2(sx-7,sy-9), Vector2(sx-10,sy-13), Vector2(sx-8.5,sy-13.5), Vector2(sx-6,sy-8.5)]), dg)
+			for lx in [-6.0, -2.5, 1.5, 4.5]:
+				draw_rect(Rect2(sx + lx, sy - 6.0, 2.6, 6.0), ink)
+				draw_rect(Rect2(sx + lx + 0.5, sy - 5.5, 1.6, 5.0), dg)
+			draw_rect(Rect2(sx - 8.0, sy - 12.0, 14.0, 7.0), ink)
+			draw_rect(Rect2(sx - 7.0, sy - 11.0, 12.0, 5.5), dg)
+			draw_colored_polygon(PackedVector2Array([Vector2(sx+3.5,sy-15.5), Vector2(sx+4.5,sy-11), Vector2(sx+7,sy-13)]), ink)
+			draw_circle(Vector2(sx + 6.0, sy - 12.0), 4.2, ink)
+			draw_circle(Vector2(sx + 6.0, sy - 12.0), 3.2, dg)
+			draw_rect(Rect2(sx + 7.5, sy - 12.0, 4.0, 3.0), ink)
+			draw_rect(Rect2(sx + 7.8, sy - 11.6, 3.6, 2.2), dg)
+			draw_circle(Vector2(sx + 11.0, sy - 10.8), 0.9, ink)
+			draw_circle(Vector2(sx + 6.2, sy - 12.6), 0.9, ink)
 		else:
-			draw_rect(Rect2(sx - 4.0, sy - 18.0, 8.0, 14.0), Color("3d6cb0"))
-			draw_circle(Vector2(sx, sy - 20.0), 4.0, Color("e8b98f"))
-			draw_rect(Rect2(sx - 4.0, sy - 4.0, 3.0, 4.0), Color("25354a"))
-			draw_rect(Rect2(sx + 1.0, sy - 4.0, 3.0, 4.0), Color("25354a"))
-		draw_rect(Rect2(sx - 12.0, sy - 40.0, 26.0, 13.0), Color("fff2b0"))
-		draw_string(font, Vector2(sx - 9.0, sy - 30.0), "HELP!", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color("a23e36"))
-	draw_string(font, Vector2(33, 251), "01 / TO THE BUILDINGS", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
-	draw_string(font, Vector2(33, 273), "Save the person + dog, then out the B2 roof.", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ink)
+			# clearly a person: head+face, torso, one arm RAISED waving, two legs (dark outline, bright fill)
+			var shirt := Color("46a0e0")
+			var face := Color("f2c9a0")
+			draw_rect(Rect2(sx - 3.6, sy - 8.0, 3.2, 8.0), ink)
+			draw_rect(Rect2(sx + 0.4, sy - 8.0, 3.2, 8.0), ink)
+			draw_rect(Rect2(sx - 3.1, sy - 7.5, 2.2, 7.0), Color("2b3a55"))
+			draw_rect(Rect2(sx + 0.9, sy - 7.5, 2.2, 7.0), Color("2b3a55"))
+			draw_rect(Rect2(sx - 5.0, sy - 19.0, 10.0, 12.0), ink)
+			draw_rect(Rect2(sx - 4.0, sy - 18.0, 8.0, 10.0), shirt)
+			draw_rect(Rect2(sx - 7.0, sy - 18.0, 3.0, 9.0), ink)
+			draw_rect(Rect2(sx - 6.5, sy - 17.0, 2.0, 8.0), face)
+			draw_rect(Rect2(sx + 3.2, sy - 27.0, 3.0, 11.0), ink)
+			draw_rect(Rect2(sx + 3.7, sy - 26.0, 2.0, 10.0), face)
+			draw_circle(Vector2(sx + 4.7, sy - 27.5), 2.3, ink)
+			draw_circle(Vector2(sx + 4.7, sy - 27.5), 1.5, face)
+			draw_circle(Vector2(sx, sy - 22.5), 5.2, ink)
+			draw_circle(Vector2(sx, sy - 22.5), 4.2, face)
+			draw_rect(Rect2(sx - 4.3, sy - 27.0, 8.6, 3.2), Color("3a2f1a"))
+			draw_circle(Vector2(sx - 1.6, sy - 23.0), 0.9, ink)
+			draw_circle(Vector2(sx + 1.6, sy - 23.0), 0.9, ink)
+			draw_rect(Rect2(sx - 1.5, sy - 20.0, 3.0, 1.1), Color("a23e36"))
+		# HELP! speech bubble (enlarged) with a pointer/tail down to the survivor
+		var buby := sy - 58.0
+		var bubx := sx - 23.0
+		draw_colored_polygon(PackedVector2Array([Vector2(sx-5,buby+17), Vector2(sx+7,buby+17), Vector2(sx+1,buby+27)]), ink)
+		draw_rect(Rect2(bubx - 2.0, buby - 2.0, 50.0, 22.0), ink)
+		draw_rect(Rect2(bubx, buby, 46.0, 18.0), Color("fff2b0"))
+		draw_colored_polygon(PackedVector2Array([Vector2(sx-3,buby+16), Vector2(sx+5,buby+16), Vector2(sx+1,buby+24)]), Color("fff2b0"))
+		draw_string(font, Vector2(bubx + 6.0, buby + 15.0), "HELP!", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color("a23e36"))
+	# Blocking fire at the person's window (big, lethal until hosed) + water stream + prompt.
+	if level.has("blocking_fire"):
+		var bf: Array = level.blocking_fire
+		var bx: float = bf[0]
+		var byy: float = bf[1]
+		var bw: float = bf[2]
+		var bbase: float = byy + float(bf[3])
+		if fire_active:
+			var ftop: float = bbase - fire_height()  # flame top rises as the fire burns down
+			var n: int = maxi(2, int(bw / 14.0))
+			for i in range(n):
+				var fcx: float = bx + bw * (float(i) + 0.5) / float(n)
+				var tip: float = ftop - 8.0 - (4.0 if i % 2 == 0 else 0.0)
+				var mid: float = minf(ftop + 4.0, bbase)
+				draw_colored_polygon(PackedVector2Array([Vector2(fcx-7, bbase), Vector2(fcx-4, mid), Vector2(fcx, tip), Vector2(fcx+4, mid), Vector2(fcx+7, bbase)]), Color("d0341a"))
+				draw_colored_polygon(PackedVector2Array([Vector2(fcx-4, bbase), Vector2(fcx, tip+8.0), Vector2(fcx+4, bbase)]), Color("f39a1e"))
+				draw_colored_polygon(PackedVector2Array([Vector2(fcx-2, bbase), Vector2(fcx, minf(ftop+1.0, bbase)), Vector2(fcx+2, bbase)]), Color("ffe95a"))
+		if water_ticks > 0:
+			var tgt := Vector2(bx + bw / 2.0, bbase - maxf(fire_height() * 0.5, 6.0))
+			var src := player.position + Vector2(7.0 * player.facing, -16.0)
+			draw_line(src, tgt, Color(0.42, 0.72, 1.0, 0.85), 3.0)
+			draw_circle(tgt, 7.0, Color(0.6, 0.82, 1.0, 0.55))
+		if near_fire and fire_active and extinguish_ticks == 0:
+			draw_string(font, Vector2(bx - 40.0, byy - 56.0), "Press W to hose the fire", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ink)
+	# Intro context labels near the spawn — hidden while the menu/pause/complete card is up.
+	if state == State.PLAYING or state == State.DYING:
+		draw_string(font, Vector2(33, 251), "01 / TO THE BUILDINGS", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
+		draw_string(font, Vector2(33, 273), "Save the person + dog, then out the B2 roof.", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ink)
 	draw_string(font, Vector2(1010, 200), "B1 / SAVE THE PERSON", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, ink)
 	draw_string(font, Vector2(1560, 138), "B2 / SAVE THE DOG -> ROOF", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, ink)

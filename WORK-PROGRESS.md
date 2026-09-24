@@ -186,6 +186,20 @@ What each code file does, so a reviewer understands the starting point:
 - **Status:** ✅ built + verified — **44/44**; route 0 deaths reaches the B2 roof with both rescued (~12.7 s); flame clearances B1-L1/B2-L1/B2-L2 = 10 px, street 5.8 px; all `walk-into-flame` lethal; descent lands on B1's base; gating at the roof. First flame pass grazed (−3.5 px) → widened window ledges + earlier takeoffs. Human playtest pending (⚠️ 30 s timer may be tight on this longer level).
 - **Human/AI:** Sreeja approved the two-building design + coords; AI builds + verifies on the real engine.
 
+### 2026-09-24 · Entry 14 — New mechanic: the hose (documented + proposed)
+- **Mechanic:** a large blocking fire at the person's window; lethal + blocks the rescue until put out. New input **W = "water"** (added to the input map; existing bindings untouched). Tap W within ~50 px → ~4 s water → fire gone. Prompt when near; resets on retry; timer 30 → 35 s.
+- **Files (when built):** `first_steps.json` (`blocking_fire` + `time_limit` 35); `session.gd` (build the blocking-fire Area2D, track `fire_active`/`extinguish_ticks`, detect W, gate the rescue on not-fatal, draw fire/water/prompt, reset on retry); `_setup_input` (+ `"water": [KEY_W]`); `player.gd` (test hook `test_water_pressed`); `route_driver.gd` (hose before rescuing the person); `test_game.gd` (5 new checks).
+- **Predicted failure cases:** (a) rescue without extinguishing; (b) extinguish doesn't reset on retry — see CHANGE-BRIEF hose revision.
+- **Status:** ✅ built + verified — **50/50** (6 hose checks). Route 0 deaths runs approach → B1 → **hose** → walk right → rescue person → descent → street → B2 → dog → roof (~17.4 s). **Layout runway (1175–1250) → fire (1250–1306) → visible person (1335)** on one widened ledge; ~40 px landing runway left of the fire (safe, no slide-in); B2 shifted +60 to keep street/climb reachability. **Progressive extinguish:** W-in-range → fire full → **half height at t=2 s** → **gone at t=4 s**; kill-zone shrinks from the top with the flames (`fire_height()` drives draw + collision) but the **base stays lethal + blocking until fully out** (`half-size-fire-still-kills`: step into the half fire at t=2 s → DYING, person not rescued); water lingers ~1 s; existing controls untouched. **Timer 40 s** (human-playtested fair; route ~17.4 s beats it; `route-beats-timer` passes). Resets on retry (fire full, timer 40 s). Human playtest of the shrink visual + fair-timing pending.
+- **Human/AI:** Sreeja specified the hose mechanic; AI documents + proposes exact values for review.
+
+### 2026-09-24 · Entry 15 — Readability + figure visual pass (drawing only)
+- **Files:** `godot/game/session.gd` (`_draw`: lighter facades, dark-opening rescue windows, redrawn person/dog, bigger HELP! bubbles + tails, lifted hose prompt), `godot/features/player/player.gd` (`_draw`: pale rim light), `godot/ui/hud.gd` (added `W: hose` to the controls bar).
+- **What:** facades → **very light brown** (kept fire glow; facade windows halved in count + recoloured to beige/cream with brown frames, so the only orange is the real fire) for contrast; **person** redrawn as a clear waving human (head/face, torso, raised arm, legs), **dog** as ears/snout/tail/four legs — bright fills + dark outlines; rescue windows → dark openings (not solid boxes) so figures pop and don't share the window colour; HELP! bubbles enlarged with pointer tails; firefighter rim light for dark surfaces; hose prompt lifted + `W: hose` added to the controls bar; intro world-labels ("01 / TO THE BUILDINGS" + objective) hidden while the menu/pause/complete card is up so they no longer overflow behind it.
+- **Constraint:** purely visual — collision, triggers, tuning, controls, and survivor/exit positions untouched.
+- **Verify:** suite **50/50** (`fixed-jump` 56.07 px unchanged); confirmed in `evidence/screens/read-b1-person.png` + `read-b2-dog.png` — firefighter, clearly-a-person + clearly-a-dog, HELP! signs, fire all read cleanly on the buildings.
+- **Status:** ✅ built + screenshot-verified. Human eyeball of the live look pending.
+
 ---
 
 ## Supporting docs (not code)

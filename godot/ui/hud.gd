@@ -19,7 +19,7 @@ func _draw() -> void:
 	draw_rect(Rect2(0,0,640,74), Color("f6f3ec"))
 	text_at("FIREFIGHTER RESCUE", Vector2(22,27), 18)
 	text_at("FIRST ALARM", Vector2(510,27), 14)
-	text_at("A/D or arrows: move     Space: jump     R: retry     Esc: pause", Vector2(22,50), 13)
+	text_at("A/D or arrows: move     Space: jump     W: hose     R: retry     Esc: pause", Vector2(22,50), 13)
 	draw_rect(Rect2(22,63,596,3), Color("daddd6"))
 	var progress: float = clampf((game.player.position.x-64)/maxf(1.0, float(game.level.finish[0])-64.0), 0, 1)
 	draw_rect(Rect2(22,63,596*progress,3), Color("287c68"))

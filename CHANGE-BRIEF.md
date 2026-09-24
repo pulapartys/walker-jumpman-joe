@@ -177,6 +177,35 @@ pause/retry/completion flow. Two decorative building facades are drawn *behind* 
 3. **The street jump is unreachable / a mid-air building leap.** → the table keeps it a
    **flat ~85 px** single jump (≤ ~106 max); `complete-real-route` crosses it with 0 deaths.
 
+## New mechanic — the hose (extinguishable blocking fire) (2026-09-24, predicted before code)
+
+_Added revision. Prior predictions retained._
+
+**Mechanic:** a **large blocking fire** sits at the **person's window** (Building 1). It is
+**lethal on touch** and **blocks the rescue** — the person cannot be reached or rescued until
+it is put out. The firefighter uses a **hose**: a **new input `W` = "water"** (an **addition**
+to the input map — existing bindings are untouched; justified because a firefighter carries a
+hose). Tap **W within ~50 px** of the blocking fire → water visibly pours on it for **~4 s** →
+the fire vanishes and the water stops. It is **auto-aimed and auto-completing** (no manual
+targeting). A prompt **"Press W to hose the fire"** shows when in range. Everything **resets on
+retry** (fire back, water state cleared). The countdown **timer is bumped 30 → 35 s** so the
+~4 s hose stays fair.
+
+**Stays unchanged:** movement/jump tuning (`tuning.gd`), the 18×28 collider, the **existing
+controls** (W is new/additive), and the pause/retry/completion flow.
+
+**Predicted failure cases + checks:**
+1. **You can rescue the person without extinguishing** (the fire doesn't actually block). →
+   the blocking fire covers the person and is lethal, and the rescue is gated on the player
+   **not being in a fatal state** (so you can't rescue *through* the fire). Checks:
+   `person-rescue-blocked-until-extinguished` (move toward the person with the fire active →
+   die, person NOT rescued) and `blocking-fire-kills-on-touch`.
+2. **The extinguish state doesn't reset on retry** (fire stays gone / water stuck). → reset
+   `fire_active = true`, `extinguish_ticks = 0` in `restart_attempt`. Check:
+   `extinguish-resets-on-retry` (extinguish → die → retry → fire is back, not extinguished).
+3. **(bonus) W disturbs existing controls.** → W is a *new* action; existing bindings are
+   untouched → the 44 automated checks still pass.
+
 ## Revisions log
 - **2026-09-22** — Postman character + postbox finish predicted, built, tested
   (34/34 + human playtest), shipped to `main` (8672fe3). _(Full postman predictions
@@ -199,3 +228,14 @@ pause/retry/completion flow. Two decorative building facades are drawn *behind* 
 - **2026-09-24** — Level redesigned to **two burning buildings** (person in B1, dog in B2,
   a burning street between, B2 rooftop = gated exit). Recorded as the revision section above;
   §3's single-climb prediction retained. Build + runtime verification next.
+- **2026-09-24** — Added the **hose** mechanic (extinguishable blocking fire at the person's
+  window; new input W = water; timer 30 → 35 s). Recorded as the revision above; prior
+  predictions retained. Proposed for review before building.
+- **2026-09-24** — Built the hose after review. Per reviewer flags: repositioned so the fire
+  visibly **blocks a visible person** (runway → fire → person at 1335) with a ~40 px safe
+  landing runway (no slide-in); B2 shifted +60. Timer set generously to **80 s**.
+- **2026-09-24** — Added **progressive extinguish**: fire full → half height at t=2 s → gone at
+  t=4 s; kill-zone shrinks from the top with the flames but the base stays lethal + blocking
+  until fully out (walking into the half fire still kills; person unreachable until t=4 s);
+  water lingers ~1 s. Timer set to **40 s** (human-playtested fair). **50/50 automated** (added
+  `half-size-fire-still-kills`); no predictions rewritten.
