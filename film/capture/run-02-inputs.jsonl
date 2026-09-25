@@ -1,0 +1,12 @@
+{"action":"confirm","pressed":true,"tick":45}
+{"action":"confirm","pressed":false,"tick":45}
+{"action":"move_right","pressed":true,"tick":47}
+{"action":"jump","pressed":true,"tick":80}
+{"action":"jump","pressed":false,"tick":80}
+{"action":"move_right","pressed":false,"tick":150}
+{"action":"move_right","pressed":true,"tick":202}
+{"action":"jump","pressed":true,"tick":235}
+{"action":"jump","pressed":false,"tick":235}
+{"action":"jump","pressed":true,"tick":296}
+{"action":"jump","pressed":false,"tick":296}
+{"action":"move_right","pressed":false,"tick":339}

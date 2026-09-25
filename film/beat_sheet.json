@@ -1,0 +1,487 @@
+{
+  "metadata": {
+    "title": "Firefighter Rescue: Extending Walker Jumpman",
+    "slug": "claude-liam-walker-jumpman-joe-walkthrough",
+    "topic": "WALKER · GODOT WALKTHROUGH",
+    "kind": "walkthrough",
+    "playlist": "Brutalist",
+    "brand": "claude-liam",
+    "audience": "Anyone curious how a small Godot game is built and plays",
+    "engine": "kokoro",
+    "voice": "am_onyx",
+    "voice_kokoro": "am_onyx",
+    "palette": "claude",
+    "style_preset": "claude",
+    "ground": "#FAF9F5",
+    "aspect_ratio": "16:9",
+    "fit": "contain",
+    "captions": false,
+    "channel_title": "@NikBearBrown",
+    "channel": "@NikBearBrown",
+    "folderLabel": "@NikBearBrown",
+    "greeting": "Annyeong, Liam",
+    "persona": "Liam (in for Bear)",
+    "presenter": "Liam (in for Bear)",
+    "in_for_bear": true,
+    "run_id": "walker-jumpman-joe-2026-09-24",
+    "episode_id": "walker-jumpman-joe-walkthrough",
+    "order": 1,
+    "note": "Walker-mode godot-waikthrough. Student: Sreeja Pulaparty. Idea + design by Sreeja; AI implemented under her direction. Gameplay is real, scripted-input capture (labeled). Game source c18abe0 / build_id c01e5a18bd6d.",
+    "links": {
+      "repo": "https://github.com/pulapartys/walker-jumpman-joe",
+      "starter": "https://github.com/nikbearbrown/walker-jumpman"
+    },
+    "tags": [
+      "Brutalist",
+      "godot-waikthrough",
+      "walker",
+      "walker-jumpman",
+      "Godot",
+      "Firefighter Rescue"
+    ],
+    "build": {
+      "at": "2026-09-24T22:21:50",
+      "cut": "master",
+      "filled": 12,
+      "of": 12,
+      "slates": [],
+      "skin_warnings": []
+    }
+  },
+  "beats": [
+    {
+      "beat_id": "B00",
+      "act": "ASK",
+      "narration_text": "Please use Walker to convert my game design document into a playable Godot project. I'm Sreeja Pulaparty, and my idea is Firefighter Rescue: you're a firefighter racing a forty-second countdown across two burning buildings. Climb the first, hose down a fire blocking a trapped person's window and pull them out, jump the burning street, climb the second to save a trapped dog, and escape off the rooftop, which only opens once everyone is safe.",
+      "voice": "am_onyx",
+      "engine": "kokoro",
+      "estimated_duration_s": 24,
+      "shot": {
+        "type": "GRAPHIC",
+        "class": "SHOW",
+        "source": "remotion",
+        "motion": "type-on",
+        "remotion": {
+          "pattern": "ClaudeComposerAsk",
+          "props": {
+            "greeting": "Annyeong, Liam",
+            "topic": "WALKER · GODOT WALKTHROUGH",
+            "segment": "Firefighter Rescue",
+            "command": "Please use Walker to convert my game design document into a playable Godot project. Firefighter Rescue: race a 40-second countdown across two burning buildings, hose a fire to reach a trapped person, cross a burning street, save a dog, and escape off the roof once everyone is safe.",
+            "runningText": "reading Sreeja's design brief -> generating a Godot project...",
+            "folderLabel": "@NikBearBrown",
+            "modelLabel": "Claude",
+            "effortLabel": "High",
+            "output": [
+              "A firefighter you control.",
+              "A fire you put out with a hose.",
+              "Two rescues, a gated rooftop escape, a 40s clock."
+            ]
+          },
+          "rendered": {
+            "out": "media/B00.mp4",
+            "at": "2026-09-25T00:54:12.098307+00:00"
+          }
+        }
+      },
+      "build": {
+        "status": "VIDEO",
+        "src": "media/B00.mp4",
+        "filled_by": "remotion:ClaudeComposerAsk",
+        "at": "2026-09-24T22:21:50"
+      },
+      "actual_duration_s": 22.31,
+      "audio_file": "mp3/beat-B00.mp3",
+      "render_duration_s": 22.333333333333332
+    },
+    {
+      "beat_id": "B01",
+      "act": "BLUF",
+      "narration_text": "Here's what came back, built on Nik Bear Brown's walker-jumpman starter. The starter's plain block is now a firefighter, and the level has grown into two burning buildings. Two quick notes before we play: that opening prompt is a reconstruction of Sreeja's design brief, not a recording; and everything you'll see is a scripted-input capture at true speed, real gameplay, labeled as scripted, not a live human run. So: one level, complete start to finish, a firefighter, a hose you use to clear a path, two rescues, and a gated rooftop escape, on a forty-second clock, with fifty automated checks behind it.",
+      "voice": "am_onyx",
+      "engine": "kokoro",
+      "estimated_duration_s": 22,
+      "shot": {
+        "type": "GRAPHIC",
+        "class": "SHOW",
+        "source": "remotion",
+        "motion": "reveal",
+        "remotion": {
+          "pattern": "BrutalistHesitantWriter",
+          "props": {
+            "text": "An extension of walker-jumpman.\nNow the fire is something you use.",
+            "fontSize": 66,
+            "align": "center",
+            "triggerWords": "a whole game",
+            "replacementWords": "one level"
+          },
+          "rendered": {
+            "out": "media/B01.mp4",
+            "at": "2026-09-25T02:06:35.369866+00:00"
+          }
+        }
+      },
+      "build": {
+        "status": "VIDEO",
+        "src": "media/B01.mp4",
+        "filled_by": "remotion:BrutalistHesitantWriter",
+        "at": "2026-09-24T22:21:50"
+      },
+      "actual_duration_s": 31.91,
+      "audio_file": "mp3/beat-B01.mp3",
+      "qc": {
+        "sparse_by_design": true,
+        "sparse_reason": "Hesitant-writer typing bookend: the line accumulates token by token, so a mid-beat frame is mostly cream by design."
+      },
+      "render_duration_s": 31.933333333333334
+    },
+    {
+      "beat_id": "B02",
+      "act": "MECHANISM",
+      "narration_text": "Controls: A and D to move, space for one fixed-height jump, no double-jump, and W for the hose. The player is a CharacterBody2D with an eighteen-by-twenty-eight collider, and the starter's movement tuning, its speed, gravity, and jump velocity, is untouched, so the jump feels identical to the original. That single jump is deliberate: every gap is sized to clear with exactly one. And the forty-second countdown lives as a value in the level's JSON, ticking from the moment you move.",
+      "voice": "am_onyx",
+      "engine": "kokoro",
+      "estimated_duration_s": 16,
+      "shot": {
+        "type": "GRAPHIC",
+        "class": "SHOW",
+        "source": "user-capture",
+        "motion": "hold"
+      },
+      "build": {
+        "status": "VIDEO",
+        "src": "media/B02.mp4",
+        "filled_by": "media",
+        "at": "2026-09-24T22:21:50"
+      },
+      "actual_duration_s": 27.73,
+      "audio_file": "mp3/beat-B02.mp3",
+      "qc": {
+        "full_bleed": true
+      },
+      "render_duration_s": 27.733333333333334
+    },
+    {
+      "beat_id": "B03",
+      "act": "MECHANISM",
+      "narration_text": "The whole level is data-driven: one JSON file lists the platforms, the flames, the survivors, and the finish, and at runtime the game turns them into static-body platforms and Area2D triggers. The flames aren't decoration; they stick up into the jump arcs as hazard areas, so every ledge is a real decision, thread the fire clean, or take a retry.",
+      "voice": "am_onyx",
+      "engine": "kokoro",
+      "estimated_duration_s": 15,
+      "shot": {
+        "type": "GRAPHIC",
+        "class": "SHOW",
+        "source": "user-capture",
+        "motion": "hold"
+      },
+      "build": {
+        "status": "VIDEO",
+        "src": "media/B03.mp4",
+        "filled_by": "media",
+        "at": "2026-09-24T22:21:50"
+      },
+      "actual_duration_s": 19.03,
+      "audio_file": "mp3/beat-B03.mp3",
+      "qc": {
+        "full_bleed": true
+      },
+      "render_duration_s": 19.033333333333335
+    },
+    {
+      "beat_id": "B04",
+      "act": "MECHANISM",
+      "narration_text": "To reach the trapped person there's a wall of fire in the window, lethal, and it blocks the rescue. So we added a new input action, water, bound to W, without touching a single existing binding. Tap it in range and the hose pours for four seconds while the fire burns down, full, half, gone. Now here's the mechanism, in slow motion: a single function, fire_height, is recomputed every physics frame, and that one number both draws the flames and defines the kill zone. So the picture and the collision shrink in lockstep, and because the base stays lethal until it hits zero, you can't sneak a rescue through a half-burned fire.",
+      "voice": "am_onyx",
+      "engine": "kokoro",
+      "estimated_duration_s": 26,
+      "shot": {
+        "type": "GRAPHIC",
+        "class": "SHOW",
+        "source": "user-capture",
+        "motion": "hold"
+      },
+      "build": {
+        "status": "VIDEO",
+        "src": "media/B04.mp4",
+        "filled_by": "media",
+        "at": "2026-09-24T22:21:50"
+      },
+      "actual_duration_s": 34.23,
+      "audio_file": "mp3/beat-B04.mp3",
+      "qc": {
+        "full_bleed": true
+      },
+      "render_duration_s": 34.233333333333334
+    },
+    {
+      "beat_id": "B05",
+      "act": "MECHANISM",
+      "narration_text": "With the fire out, the rescue is just an overlap: your collider enters the survivor's trigger area and they're saved, gated so it can only fire when you're not already dying. Then it's down off the building, and one committed jump across a burning street, a ground-level gap with fire right in the middle.",
+      "voice": "am_onyx",
+      "engine": "kokoro",
+      "estimated_duration_s": 15,
+      "shot": {
+        "type": "GRAPHIC",
+        "class": "SHOW",
+        "source": "user-capture",
+        "motion": "hold"
+      },
+      "build": {
+        "status": "VIDEO",
+        "src": "media/B05.mp4",
+        "filled_by": "media",
+        "at": "2026-09-24T22:21:50"
+      },
+      "actual_duration_s": 15.89,
+      "audio_file": "mp3/beat-B05.mp3",
+      "qc": {
+        "full_bleed": true
+      },
+      "render_duration_s": 15.9
+    },
+    {
+      "beat_id": "B06",
+      "act": "MECHANISM",
+      "narration_text": "Second building, a second climb, and the dog, placed off the main line, so reaching it is a detour you choose. The finish is a trigger too, but with a condition in code: it only completes when you overlap it, on the ground, and an all-rescued flag is true. One survivor short and it stays locked and says rescue everyone first. Both in the bag, onto the roof, and out, with time to spare.",
+      "voice": "am_onyx",
+      "engine": "kokoro",
+      "estimated_duration_s": 18,
+      "shot": {
+        "type": "GRAPHIC",
+        "class": "SHOW",
+        "source": "user-capture",
+        "motion": "hold"
+      },
+      "build": {
+        "status": "VIDEO",
+        "src": "media/B06.mp4",
+        "filled_by": "media",
+        "at": "2026-09-24T22:21:50"
+      },
+      "actual_duration_s": 18.97,
+      "audio_file": "mp3/beat-B06.mp3",
+      "qc": {
+        "full_bleed": true,
+        "contrast_regions": [
+          {
+            "label": "HUD title/controls bar",
+            "box": [
+              0.02,
+              0.02,
+              0.72,
+              0.14
+            ]
+          },
+          {
+            "label": "HUD objective/timer bar",
+            "box": [
+              0.02,
+              0.88,
+              0.98,
+              0.99
+            ]
+          }
+        ],
+        "contrast_reason": "Real Godot gameplay HUD (full-bleed capture). The essential text — the top title/controls bar and the bottom objective/timer bar — is dark ink on cream bars, high local contrast. The global heuristic reads 0.30 only because the light-brown building fills most of this frame; the on-screen text is legible (verified by eye)."
+      },
+      "render_duration_s": 19.0
+    },
+    {
+      "beat_id": "B07",
+      "act": "FALSIFIABILITY",
+      "narration_text": "And miss a jump into the fire? Touch flame and the state machine flips to a dying state, then respawns you at the start, no lives, no penalty screen, just an instant retry, and the clock resets.",
+      "voice": "am_onyx",
+      "engine": "kokoro",
+      "estimated_duration_s": 12,
+      "shot": {
+        "type": "GRAPHIC",
+        "class": "SHOW",
+        "source": "user-capture",
+        "motion": "hold"
+      },
+      "build": {
+        "status": "VIDEO",
+        "src": "media/B07.mp4",
+        "filled_by": "media",
+        "at": "2026-09-24T22:21:50"
+      },
+      "actual_duration_s": 10.62,
+      "audio_file": "mp3/beat-B07.mp3",
+      "qc": {
+        "full_bleed": true
+      },
+      "render_duration_s": 10.633333333333333
+    },
+    {
+      "beat_id": "B08",
+      "act": "VERDICT",
+      "narration_text": "So, does it hold up? Yes. Everything I just showed actually runs, and there's a full automated suite behind it. What stands out to me is that the level keeps making you decide something: when to burn clock on the hose, whether to commit to the street, and the rule that you can't leave without the dog. I can't promise how it feels on someone else's machine, and one or two of those fire jumps are genuinely tight. And to be clear, it's a single level; a second one is on the wishlist, not in the build yet.",
+      "voice": "am_onyx",
+      "engine": "kokoro",
+      "estimated_duration_s": 24,
+      "shot": {
+        "type": "GRAPHIC",
+        "class": "SHOW",
+        "source": "remotion",
+        "motion": "reveal",
+        "remotion": {
+          "pattern": "ClaudeVerdictArtifact",
+          "props": {
+            "artifactTitle": "Verdict",
+            "artifactHeading": "What holds up",
+            "artifactLines": [
+              "Works: firefighter, climbs, the shrinking-fire hose, both rescues, the gated exit, the 40-second clock — 50 of 50 automated checks green.",
+              "Strength: it's built around decisions — the hose, the burning street, the go-get-both gate — not empty floor.",
+              "Unproven: feel on other machines; a couple of flame jumps are tight, but makeable.",
+              "Planned, not built: a second level."
+            ]
+          },
+          "rendered": {
+            "out": "media/B08.mp4",
+            "at": "2026-09-25T01:03:26.561347+00:00"
+          }
+        }
+      },
+      "build": {
+        "status": "VIDEO",
+        "src": "media/B08.mp4",
+        "filled_by": "remotion:ClaudeVerdictArtifact",
+        "at": "2026-09-24T22:21:50"
+      },
+      "actual_duration_s": 26.62,
+      "audio_file": "mp3/beat-B08.mp3",
+      "qc": {
+        "sparse_by_design": true,
+        "sparse_reason": "Verdict artifact card: a centered card on cream with intentional margins, per the Claude fidelity skin."
+      },
+      "render_duration_s": 26.633333333333333
+    },
+    {
+      "beat_id": "B09",
+      "act": "HANDOFF",
+      "narration_text": "Your turn. Grab the repo, pulapartys slash walker-jumpman-joe, and try one thing: drop a second fire on the way to the dog, and see whether that four-second hose still feels fair against the forty-second clock.",
+      "voice": "am_onyx",
+      "engine": "kokoro",
+      "estimated_duration_s": 15,
+      "shot": {
+        "type": "GRAPHIC",
+        "class": "SHOW",
+        "source": "remotion",
+        "motion": "type-on",
+        "remotion": {
+          "pattern": "ClaudeComposerAsk",
+          "props": {
+            "greeting": "Your turn.",
+            "topic": "TRY IT YOURSELF",
+            "segment": "walker-jumpman-joe",
+            "command": "Clone pulapartys/walker-jumpman-joe. Add a second blocking fire on the path to the dog, then re-check: does the 4-second hose still fit inside the 40-second clock?",
+            "folderLabel": "@NikBearBrown",
+            "modelLabel": "Claude",
+            "effortLabel": "High",
+            "output": [
+              "Add a second hose fire.",
+              "Re-run the route + timer check.",
+              "Tune until it's fair."
+            ]
+          },
+          "rendered": {
+            "out": "media/B09.mp4",
+            "at": "2026-09-25T00:58:53.438137+00:00"
+          }
+        }
+      },
+      "build": {
+        "status": "VIDEO",
+        "src": "media/B09.mp4",
+        "filled_by": "remotion:ClaudeComposerAsk",
+        "at": "2026-09-24T22:21:50"
+      },
+      "actual_duration_s": 11.48,
+      "audio_file": "mp3/beat-B09.mp3",
+      "render_duration_s": 11.5
+    },
+    {
+      "beat_id": "B9C",
+      "act": "CREDITS",
+      "narration_text": "Credits. Firefighter Rescue was designed and directed by Sreeja Pulaparty. Claude Code did the implementation, under her direction; the narration is Liam, an A-I voice. The exact build shown is on screen, on Sreeja's GitHub.",
+      "voice": "am_onyx",
+      "engine": "kokoro",
+      "estimated_duration_s": 13,
+      "shot": {
+        "type": "GRAPHIC",
+        "class": "SHOW",
+        "source": "remotion",
+        "motion": "reveal",
+        "remotion": {
+          "pattern": "ClaudeVerdictArtifact",
+          "props": {
+            "artifactTitle": "Credits",
+            "artifactHeading": "Who made this",
+            "artifactLines": [
+              "Design & direction: Sreeja Pulaparty",
+              "Implementation: Claude Code, directed by Sreeja",
+              "Narration: Liam — AI voice (Kokoro am_onyx)",
+              "Game revision shown: walker-jumpman-joe @ commit c18abe0",
+              "github.com/pulapartys/walker-jumpman-joe"
+            ]
+          },
+          "rendered": {
+            "out": "media/B9C.mp4",
+            "at": "2026-09-25T02:08:25.918640+00:00"
+          }
+        }
+      },
+      "build": {
+        "status": "VIDEO",
+        "src": "media/B9C.mp4",
+        "filled_by": "remotion:ClaudeVerdictArtifact",
+        "at": "2026-09-24T22:21:50"
+      },
+      "qc": {
+        "sparse_by_design": true,
+        "sparse_reason": "Credits card: a centered artifact card on cream with intentional margins, per the Claude fidelity skin."
+      },
+      "actual_duration_s": 13.63,
+      "audio_file": "mp3/beat-B9C.mp3",
+      "render_duration_s": 13.633333333333333
+    },
+    {
+      "beat_id": "B10",
+      "act": "OUTRO",
+      "narration_text": "Firefighter Rescue: Extending Walker Jumpman. At Nik Bear Brown.",
+      "voice": "am_onyx",
+      "engine": "kokoro",
+      "estimated_duration_s": 7,
+      "shot": {
+        "type": "GRAPHIC",
+        "class": "SHOW",
+        "source": "remotion",
+        "motion": "mascot-title",
+        "remotion": {
+          "pattern": "ClaudeTitleOutro",
+          "props": {
+            "title": "Firefighter Rescue: Extending Walker Jumpman",
+            "slug": "claude-liam-walker-jumpman-joe-walkthrough"
+          },
+          "rendered": {
+            "out": "media/B10.mp4",
+            "at": "2026-09-25T00:59:19.638632+00:00"
+          }
+        }
+      },
+      "build": {
+        "status": "VIDEO",
+        "src": "media/B10.mp4",
+        "filled_by": "remotion:ClaudeTitleOutro",
+        "at": "2026-09-24T22:21:50"
+      },
+      "audio_policy": "silence",
+      "actual_duration_s": 7.0,
+      "qc": {
+        "sparse_by_design": true,
+        "sparse_reason": "Title outro card (OUTRO-LOCK): title + @NikBearBrown + a small centered mascot on cream — sparse by design."
+      },
+      "render_duration_s": 7.0
+    }
+  ]
+}

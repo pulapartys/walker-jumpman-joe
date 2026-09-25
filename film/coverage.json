@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "game": {
+    "name": "walker-jumpman-joe",
+    "build_id": "c01e5a18bd6d6e8ece9bd61d0bd1790f5b6f90e7c09d51ed98ce6e45b4f52106"
+  },
+  "captures": {
+    "run-01": {
+      "path": "capture/run-01.mp4",
+      "sha256": "9c0e9ea510b69f300500f0711254293ed4231cbd61fb827376e1a6c4cc7d78ba",
+      "build_id": "c01e5a18bd6d6e8ece9bd61d0bd1790f5b6f90e7c09d51ed98ce6e45b4f52106",
+      "method": "scripted-input",
+      "input_log": "capture/run-01-inputs.jsonl"
+    },
+    "run-02": {
+      "path": "capture/run-02.mp4",
+      "sha256": "834eb5ddd70ba20dfa0c1ed12c7e33016d84f66ade4ecbedd9e726dde7994cc1",
+      "build_id": "c01e5a18bd6d6e8ece9bd61d0bd1790f5b6f90e7c09d51ed98ce6e45b4f52106",
+      "method": "scripted-input",
+      "input_log": "capture/run-02-inputs.jsonl"
+    }
+  },
+  "features": [
+    {
+      "id": "move-and-jump",
+      "status": "implemented",
+      "evidence": [
+        {
+          "capture": "run-01",
+          "beat_id": "B02",
+          "start_s": 1.0,
+          "action_s": 1.4,
+          "end_s": 4.0,
+          "observation": "The firefighter walks right and clears the first ledges with single jumps.",
+          "riff": "One fixed-height jump, no double-jump: every gap is sized to exactly one hop."
+        }
+      ]
+    },
+    {
+      "id": "countdown-timer",
+      "status": "implemented",
+      "evidence": [
+        {
+          "capture": "run-01",
+          "beat_id": "B02",
+          "start_s": 1.0,
+          "action_s": 2.0,
+          "end_s": 4.0,
+          "observation": "The HUD clock counts down from 40 seconds as play begins.",
+          "riff": "The 40s limit is a value in the level JSON; it's the pressure the whole level is tuned around."
+        }
+      ]
+    },
+    {
+      "id": "fire-hazards-fire-vs-safe",
+      "status": "implemented",
+      "evidence": [
+        {
+          "capture": "run-01",
+          "beat_id": "B03",
+          "start_s": 4.2,
+          "action_s": 5.2,
+          "end_s": 7.9,
+          "observation": "Flames stick up on the climb ledges; each jump threads over fire.",
+          "riff": "Fire is the obstacle, not decoration: clear it clean or take a retry."
+        }
+      ]
+    },
+    {
+      "id": "hose-progressive-extinguish",
+      "status": "implemented",
+      "evidence": [
+        {
+          "capture": "run-01",
+          "beat_id": "B04",
+          "start_s": 8.0,
+          "action_s": 8.5,
+          "end_s": 13.0,
+          "observation": "Tapping W pours water; the blocking fire shrinks full-to-half-to-gone over ~4s.",
+          "riff": "One fire_height() drives both the flames and the kill zone, so they shrink together; the base stays lethal until it's fully out."
+        }
+      ]
+    },
+    {
+      "id": "touch-to-rescue",
+      "status": "implemented",
+      "evidence": [
+        {
+          "capture": "run-01",
+          "beat_id": "B05",
+          "start_s": 12.8,
+          "action_s": 13.2,
+          "end_s": 14.2,
+          "observation": "With the fire out, walking into the person rescues them.",
+          "riff": "Rescue is an Area2D overlap, gated so it can't fire while you're dying."
+        }
+      ]
+    },
+    {
+      "id": "burning-street-jump",
+      "status": "implemented",
+      "evidence": [
+        {
+          "capture": "run-01",
+          "beat_id": "B05",
+          "start_s": 14.0,
+          "action_s": 14.4,
+          "end_s": 15.0,
+          "observation": "A committed jump crosses the burning street gap to Building 2.",
+          "riff": "A ground-level gap with fire in it: mistime it and it's a retry."
+        }
+      ]
+    },
+    {
+      "id": "gated-rooftop-exit",
+      "status": "implemented",
+      "evidence": [
+        {
+          "capture": "run-01",
+          "beat_id": "B06",
+          "start_s": 17.3,
+          "action_s": 18.4,
+          "end_s": 19.6,
+          "observation": "The rooftop fire escape completes only after both survivors are saved.",
+          "riff": "The finish needs overlap + on-floor + an all-rescued flag: both, or nothing."
+        }
+      ]
+    },
+    {
+      "id": "completion-and-replay",
+      "status": "implemented",
+      "evidence": [
+        {
+          "capture": "run-01",
+          "beat_id": "B06",
+          "start_s": 19.6,
+          "action_s": 20.0,
+          "end_s": 20.6,
+          "observation": "The run completes on the roof and can be replayed.",
+          "riff": "Reaching the unlocked exit on foot is the win condition."
+        }
+      ]
+    },
+    {
+      "id": "failure-and-instant-retry",
+      "status": "implemented",
+      "evidence": [
+        {
+          "capture": "run-02",
+          "beat_id": "B07",
+          "start_s": 1.0,
+          "action_s": 2.5,
+          "end_s": 4.2,
+          "observation": "Walking into the flame kills the firefighter, who instantly respawns at the start.",
+          "riff": "No lives, no penalty screen: the state machine flips to dying, then retries."
+        }
+      ]
+    },
+    {
+      "id": "second-level",
+      "status": "planned",
+      "reason": "Documented as a 'someday' stretch goal; not built in this window.",
+      "evidence": []
+    }
+  ]
+}

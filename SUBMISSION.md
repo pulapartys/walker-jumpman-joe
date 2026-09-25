@@ -1,23 +1,24 @@
 # SUBMISSION — Assignment 1: Extend Walker Jumpman
 
-> Canvas submission note. Canvas, GitHub, and the film must all refer to the same
-> submitted revision. Fields marked _(TBD)_ are filled at final submission (after the
-> Brutalist film is rendered and the final documentation commit is made).
+> Canvas submission note. Canvas, GitHub, and the film all refer to the same submitted
+> revision. The **submitted commit SHA is the final documentation commit** — recorded in the
+> Canvas note (a commit cannot embed its own hash).
 
 - **Assignment:** Assignment 1 — Extend Walker Jumpman (CSYE 7270, Fall 2026)
 - **Student:** Sreeja Pulaparty (pulaparty.s@northeastern.edu)
 - **Project name:** walker-jumpman-joe — "Firefighter Rescue"
 - **GitHub repository:** https://github.com/pulapartys/walker-jumpman-joe
-- **Submitted commit SHA:** _(TBD — the final documentation commit)_
-- **Game-source revision shown in the film:** _(TBD — the game-source commit the capture
-  was recorded from; will differ from the final submission commit, which only adds film
-  documentation and does not change the game source. The current game source is merge
-  commit `c18abe0` / PR #4.)_
+- **Submitted commit SHA:** the final documentation commit on `main` (this commit adds the
+  film docs + links; its hash is pasted into the Canvas note — a commit can't contain its own SHA).
+- **Game-source revision shown in the film:** **`c18abe0`** (Merge PR #4, on `main`). The
+  game source is unchanged since; later commits only add documentation. Source-snapshot
+  build_id `c01e5a18bd6d6e8ece9bd61d0bd1790f5b6f90e7c09d51ed98ce6e45b4f52106`.
 - **Godot version and operating system:** Godot 4.7.2.stable.official.ed1daf0bf ·
   macOS 26 (Apple Silicon)
-- **Final film URL and filename:** _(TBD — stored in course media storage; MP4 kept out of
-  GitHub, linked from the README)_
-- **Final film SHA-256:** _(TBD — `shasum -a 256 <film>.mp4`)_
+- **Final film URL and filename:** `claude-liam-walker-jumpman-joe-walkthrough.mp4` —
+  [Northeastern SharePoint (course media)](https://northeastern-my.sharepoint.com/:f:/g/personal/pulaparty_s_northeastern_edu/IgAvhraS3cKYQp7qPLGMYkTFAaoX6uyCtB3XiVJu-IHtnno?e=fcMLKf).
+  (MP4 kept out of GitHub; the film's beat sheet / script / coverage / evidence are in `film/`.)
+- **Final film SHA-256:** `b1257c496b07f9fcca1d37eb601828ed1dd1410b909d1478d837b49e6f46fd1b`
 
 ## Summary of my changes
 Extended the starter's "First Steps" slice into **"Firefighter Rescue"** — a two-building
@@ -63,8 +64,8 @@ the person *and* the off-path dog are saved, so you can't skip the second climb.
 - The character went chick → postman → **firefighter**; the earlier **postman** predictions
   live only in git history (commit `8672fe3`), not in the current CHANGE-BRIEF (an honest
   pivot, logged in the revisions log).
-- **The Brutalist explainer film is not yet rendered** — the remaining deliverable; the
-  film URL/SHA-256 and final commit SHA above are filled once it's produced.
+- The explainer film's gameplay is a **scripted-input capture** (labeled in the film), not a
+  live human run; the required human playtest is in `TEST-REPORT.md` / `FRICTIONAL.md`.
 
 ## Verification at a glance
 - **Automated:** **50 checks** pass (`test_game.gd` **41** + `test_keyboard.gd` **9**) on the
