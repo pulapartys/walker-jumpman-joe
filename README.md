@@ -11,7 +11,7 @@ rooftop fire escape** before the fire — or the clock — wins. This is **Assig
 - **Author:** Sreeja Pulaparty (pulaparty.s@northeastern.edu)
 - **Starter credit:** extended from **[nikbearbrown/walker-jumpman](https://github.com/nikbearbrown/walker-jumpman)** (the "First Steps" slice). This repo keeps the starter's control/retry engine, state machine, collider, and movement tuning, and builds the firefighter theme, the two-building level, the rescue + hose mechanics, and the timer on top.
 - **Engine:** Godot **4.7.2.stable.official.ed1daf0bf** (Compatibility / GL renderer), macOS. No .NET runtime, no external assets.
-- **Final film:** _(link TBD — the Brutalist explainer is rendered separately and stored in course media; the MP4 is kept out of GitHub and linked here + in SUBMISSION.md)_
+- **Final film (Brutalist walker-mode explainer):** `claude-liam-walker-jumpman-joe-walkthrough.mp4` — [Northeastern SharePoint (course media)](https://northeastern-my.sharepoint.com/:f:/g/personal/pulaparty_s_northeastern_edu/IgAvhraS3cKYQp7qPLGMYkTFAaoX6uyCtB3XiVJu-IHtnno?e=fcMLKf) · SHA-256 `b1257c496b07f9fcca1d37eb601828ed1dd1410b909d1478d837b49e6f46fd1b`. (MP4 kept out of GitHub; the film's beat sheet, script, coverage + evidence are in [`film/`](film/).)
 
 ## Run it
 1. Install **Godot 4.7.2** (Compatibility build) and open **`godot/project.godot`** in the editor.
@@ -88,8 +88,8 @@ Exit code 0 = all pass. Details + human playtests: **[TEST-REPORT.md](TEST-REPOR
 - The hose is **auto-aimed and auto-completing** once started (tap W in range) — there is no
   manual aiming; a deliberate simplification.
 - **No audio; source release only** (no exported build).
-- The **Brutalist explainer film is not yet rendered** — it is the remaining deliverable and
-  will be linked here + in SUBMISSION.md once produced.
+- The gameplay in the explainer film is a **scripted-input capture** (labeled), not a live
+  human run — the required human playtest is in `TEST-REPORT.md` / `FRICTIONAL.md`.
 
 ## Project docs
 - **[CHANGE-BRIEF.md](CHANGE-BRIEF.md)** — predictions written *before* each build step (+ honest revisions log).
@@ -99,5 +99,6 @@ Exit code 0 = all pass. Details + human playtests: **[TEST-REPORT.md](TEST-REPOR
 - **[WORK-PROGRESS.md](WORK-PROGRESS.md)** — a code-change log (what changed and why).
 - **[CHARACTER-DESIGN.md](CHARACTER-DESIGN.md)** — character design reasoning and iterations.
 - **[SUBMISSION.md](SUBMISSION.md)** — the Canvas submission metadata block.
+- **[`film/`](film/)** — the explainer film's beat sheet, script/prompts, coverage, and capture evidence (the MP4 itself is in course media, linked above).
 
 _Sreeja's game and Sreeja's ideas — she decides what to build and how to modify it, and manually plays and retries after every change; the AI is a supporting tool that implements and checks her authorized changes._
